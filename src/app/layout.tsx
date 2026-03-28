@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'AnalisaPet AI - Saúde e Nutrição Animal',
+  title: 'Vet AI - Saúde e Nutrição Animal',
   description: 'Análise inteligente de alimentação e sintomas para seu pet',
 };
 

@@ -75,7 +75,7 @@ export default function Home() {
         </div>
 
         <section className="mt-20 py-12 border-t border-border/20 text-center">
-          <h2 className="text-2xl font-headline font-bold mb-8 text-foreground">Por que usar o AnalisaPet AI?</h2>
+          <h2 className="text-2xl font-headline font-bold mb-8 text-foreground">Por que usar o Vet AI?</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="p-4 space-y-2">
               <div className="inline-block p-3 bg-secondary rounded-full shadow-sm mb-2">
@@ -104,7 +104,7 @@ export default function Home() {
 
       <footer className="bg-card py-8 border-t border-border/20">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2024 AnalisaPet AI. Desenvolvido para amantes de animais.</p>
+          <p>© 2026 Vet AI. Desenvolvido pela WS Studios para amantes de animais.</p>
           <p className="mt-2 text-xs opacity-70">Aviso: Esta ferramenta fornece informações auxiliares e não substitui uma consulta veterinária profissional.</p>
         </div>
       </footer>

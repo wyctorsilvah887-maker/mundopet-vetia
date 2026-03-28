@@ -9,7 +9,7 @@ export function Navbar() {
           <div className="bg-primary p-2 rounded-xl text-primary-foreground group-hover:scale-110 transition-transform">
             <PawPrint className="w-6 h-6" />
           </div>
-          <span className="font-headline font-bold text-xl tracking-tight text-primary">AnalisaPet AI</span>
+          <span className="font-headline font-bold text-xl tracking-tight text-primary">Vet AI</span>
         </Link>
       </div>
     </header>
