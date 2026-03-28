@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Camera, Upload, X, Search, FileText, CheckCircle2, AlertTriangle, Stethoscope } from 'lucide-react';
 import { analyzeImagePetHealth, type AnalyzeImagePetHealthOutput } from '@/ai/flows/analyze-image-pet-health-flow';
@@ -56,7 +55,7 @@ export function ImageAnalysisForm() {
 
   return (
     <div className="space-y-8">
-      <Card className="shadow-lg border-2">
+      <Card className="shadow-lg border-2 border-border/50">
         <CardHeader>
           <CardTitle>Selecione ou Capture uma Foto</CardTitle>
           <CardDescription>
@@ -67,13 +66,13 @@ export function ImageAnalysisForm() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {!imagePreview ? (
               <div 
-                className="border-2 border-dashed rounded-2xl p-12 text-center hover:bg-muted/50 transition-colors cursor-pointer group"
+                className="border-2 border-dashed border-border rounded-2xl p-12 text-center hover:bg-secondary/50 transition-colors cursor-pointer group"
                 onClick={() => fileInputRef.current?.click()}
               >
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                   <Upload className="w-8 h-8 text-primary" />
                 </div>
-                <h3 className="font-bold text-lg mb-1">Clique para enviar ou tirar foto</h3>
+                <h3 className="font-bold text-lg mb-1 text-foreground">Clique para enviar ou tirar foto</h3>
                 <p className="text-sm text-muted-foreground">Suporta JPG, PNG e WEBP</p>
                 <input 
                   type="file" 
@@ -85,7 +84,7 @@ export function ImageAnalysisForm() {
                 />
               </div>
             ) : (
-              <div className="relative aspect-video rounded-2xl overflow-hidden border-2 bg-black flex items-center justify-center group">
+              <div className="relative aspect-video rounded-2xl overflow-hidden border-2 border-border bg-black flex items-center justify-center group">
                 <Image 
                   src={imagePreview} 
                   alt="Preview" 
@@ -107,7 +106,7 @@ export function ImageAnalysisForm() {
               <label className="text-sm font-bold text-muted-foreground">Contexto Adicional (Opcional)</label>
               <Textarea
                 placeholder="Ex: 'É o rótulo da ração que meu cão come' ou 'Essa mancha apareceu ontem na orelha'"
-                className="resize-none"
+                className="resize-none bg-secondary/30"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={loading}
@@ -136,10 +135,10 @@ export function ImageAnalysisForm() {
       </Card>
 
       {result && (
-        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-xl overflow-hidden border-2">
+        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-xl overflow-hidden border-2 border-border/50">
           <div className="h-2 w-full bg-accent" />
           <CardHeader className="bg-muted/30">
-            <CardTitle className="text-2xl font-bold flex items-center gap-2">
+            <CardTitle className="text-2xl font-bold flex items-center gap-2 text-foreground">
               <Stethoscope className="w-6 h-6 text-primary" />
               Laudo da Análise de Imagem
             </CardTitle>
@@ -161,22 +160,22 @@ export function ImageAnalysisForm() {
                 <CheckCircle2 className="w-5 h-5 text-accent" />
                 Análise Detalhada
               </h3>
-              <p className="text-foreground/90 leading-relaxed bg-white p-4 rounded-xl border">
+              <p className="text-foreground/90 leading-relaxed bg-secondary/20 p-4 rounded-xl border border-border/50">
                 {result.analysis}
               </p>
             </section>
 
             <section className="space-y-3">
-              <h3 className="font-bold text-lg flex items-center gap-2 text-orange-600">
+              <h3 className="font-bold text-lg flex items-center gap-2 text-orange-400">
                 <AlertTriangle className="w-5 h-5" />
                 Sugestões e Cuidados
               </h3>
-              <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 text-sm leading-relaxed">
+              <div className="bg-orange-500/10 p-4 rounded-xl border border-orange-500/20 text-sm leading-relaxed text-orange-200">
                 {result.suggestions}
               </div>
             </section>
             
-            <div className="p-4 bg-muted rounded-lg flex items-start gap-3 mt-4 border border-dashed border-muted-foreground/30">
+            <div className="p-4 bg-muted/50 rounded-lg flex items-start gap-3 mt-4 border border-dashed border-muted-foreground/30">
               <p className="text-xs text-muted-foreground leading-tight italic">
                 Nota: Esta análise baseia-se exclusivamente nos elementos visuais capturados. Rótulos podem conter variações e imagens de sintomas podem não revelar toda a complexidade clínica. Consulte sempre um veterinário.
               </p>
