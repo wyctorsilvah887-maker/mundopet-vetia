@@ -1,16 +1,41 @@
+
+"use client";
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MessageSquareText, Camera, ShieldCheck, Zap, HeartPulse } from 'lucide-react';
+import { MessageSquareText, Camera, ShieldCheck, Zap, HeartPulse, Loader2 } from 'lucide-react';
+import { useUser } from '@/firebase';
 
 export default function Home() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-black">
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-8 md:py-16">
         <div className="max-w-4xl mx-auto text-center mb-12 space-y-4">
-          <h1 className="text-4xl md:text-5xl font-headline font-extrabold tracking-tight text-foreground">
+          <h1 className="text-4xl md:text-5xl font-headline font-extrabold tracking-tight text-white">
             Cuidado Inteligente para seu <span className="text-primary">Melhor Amigo</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -26,7 +51,7 @@ export default function Home() {
                 <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                   <MessageSquareText className="w-8 h-8 text-primary" />
                 </div>
-                <CardTitle className="text-2xl font-headline font-bold text-foreground">Análise de Texto AI</CardTitle>
+                <CardTitle className="text-2xl font-headline font-bold text-white">Análise de Texto AI</CardTitle>
                 <CardDescription className="text-base text-muted-foreground">
                   Descreva sintomas, comportamentos ou ingredientes para uma análise detalhada.
                 </CardDescription>
@@ -53,7 +78,7 @@ export default function Home() {
                 <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                   <Camera className="w-8 h-8 text-accent-foreground" />
                 </div>
-                <CardTitle className="text-2xl font-headline font-bold text-foreground">Análise de Imagem AI</CardTitle>
+                <CardTitle className="text-2xl font-headline font-bold text-white">Análise de Imagem AI</CardTitle>
                 <CardDescription className="text-base text-muted-foreground">
                   Tire fotos de rótulos de ração, alimentos ou sintomas visuais para um laudo instantâneo.
                 </CardDescription>
@@ -75,27 +100,27 @@ export default function Home() {
         </div>
 
         <section className="mt-20 py-12 border-t border-border/20 text-center">
-          <h2 className="text-2xl font-headline font-bold mb-8 text-foreground">Por que usar o Vet AI?</h2>
+          <h2 className="text-2xl font-headline font-bold mb-8 text-white">Por que usar o Vet AI?</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="p-4 space-y-2">
               <div className="inline-block p-3 bg-secondary rounded-full shadow-sm mb-2">
                 <Zap className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-bold text-foreground">Rapidez</h3>
+              <h3 className="font-bold text-white">Rapidez</h3>
               <p className="text-sm text-muted-foreground">Respostas em poucos segundos para suas dúvidas mais urgentes.</p>
             </div>
             <div className="p-4 space-y-2">
               <div className="inline-block p-3 bg-secondary rounded-full shadow-sm mb-2">
                 <ShieldCheck className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-bold text-foreground">Confiabilidade</h3>
+              <h3 className="font-bold text-white">Confiabilidade</h3>
               <p className="text-sm text-muted-foreground">Baseado em inteligência artificial treinada para suporte animal.</p>
             </div>
             <div className="p-4 space-y-2">
               <div className="inline-block p-3 bg-secondary rounded-full shadow-sm mb-2">
                 <HeartPulse className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-bold text-foreground">Foco no Pet</h3>
+              <h3 className="font-bold text-white">Foco no Pet</h3>
               <p className="text-sm text-muted-foreground">Conteúdo focado no bem-estar e na saúde de cães e gatos.</p>
             </div>
           </div>
