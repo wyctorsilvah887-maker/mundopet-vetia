@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -16,7 +15,7 @@ import {
   signInWithPopup,
   updateProfile 
 } from 'firebase/auth';
-import { Loader2, Mail, Lock, LogIn, Chrome, User, ImageIcon, Upload, X } from 'lucide-react';
+import { Loader2, Mail, Lock, LogIn, Chrome, User, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 
@@ -33,16 +32,17 @@ export default function LoginPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Redireciona se já estiver logado, mas apenas se não estivermos no meio de um cadastro
   useEffect(() => {
-    if (user) {
+    if (user && !isLoading) {
       router.push('/');
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) { // Limite simples de 1MB para protótipo
+      if (file.size > 1024 * 1024) { 
         toast({
           variant: "destructive",
           title: "Arquivo muito grande",
@@ -66,6 +66,7 @@ export default function LoginPage() {
     try {
       if (isSignUp) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // Aguarda a atualização do perfil antes de permitir o redirecionamento
         await updateProfile(userCredential.user, {
           displayName: displayName || email.split('@')[0],
           photoURL: photoURL || `https://picsum.photos/seed/${userCredential.user.uid}/200/200`
@@ -75,14 +76,13 @@ export default function LoginPage() {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Bem-vindo de volta!", description: "Login realizado com sucesso." });
       }
-      router.push('/');
+      // O useEffect cuidará do push('/')
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro na autenticação",
         description: error.message || "Ocorreu um problema inesperado.",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -93,14 +93,12 @@ export default function LoginPage() {
     try {
       await signInWithPopup(auth, provider);
       toast({ title: "Sucesso!", description: "Login com Google realizado." });
-      router.push('/');
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro no Google Login",
         description: error.message,
       });
-    } finally {
       setIsLoading(false);
     }
   };
