@@ -150,7 +150,7 @@ export default function Home() {
 
       <footer className="bg-black py-8 border-t border-white/5">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-[8px] text-muted-foreground uppercase tracking-[0.3em] opacity-50 font-bold mb-3">Vet AI Elite Technology</p>
+          <p className="text-[8px] text-muted-foreground uppercase tracking-[0.3em] opacity-50 font-bold mb-3">Vet AI Elite Technology WS Studios</p>
           <p className="text-[8px] opacity-40 uppercase tracking-widest leading-relaxed">
             AVISO: FERRAMENTA DE AUXÍLIO TECNOLÓGICO. <br />
             NUNCA SUBSTITUA A CONSULTA COM UM MÉDICO VETERINÁRIO.
