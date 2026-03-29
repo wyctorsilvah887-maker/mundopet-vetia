@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -36,40 +37,27 @@ export function Navbar() {
 
   return (
     <header className="border-b border-white/5 bg-black/60 backdrop-blur-xl sticky top-0 z-50">
-      <div className="container mx-auto px-4 h-20 flex items-center justify-between relative">
-        {/* Lado Esquerdo: Espaçador */}
-        <div className="flex-1" />
-
-        {/* Centro: Logotipo */}
-        <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 group">
-          <div className="bg-gradient-to-br from-primary to-accent p-2.5 rounded-2xl text-black group-hover:scale-110 transition-transform duration-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
-            <PawPrint className="w-7 h-7" />
-          </div>
-          <span className="font-headline font-bold text-2xl tracking-tighter text-white group-hover:text-primary transition-colors">
-            Vet<span className="text-primary">AI</span>
-          </span>
-        </Link>
-
-        {/* Lado Direito: Perfil (Avatar à esquerda, Nome à direita) */}
-        <div className="flex-1 flex justify-end items-center gap-4">
+      <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between relative">
+        {/* Lado Esquerdo: Perfil */}
+        <div className="flex-1 flex items-center gap-2 md:gap-3">
           {!isUserLoading && user ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-11 w-11 rounded-full border-2 border-primary/30 hover:border-primary transition-all duration-300 p-0 overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                  <Button variant="ghost" className="relative h-9 w-9 md:h-11 md:w-11 rounded-full border border-primary/30 hover:border-primary transition-all duration-300 p-0 overflow-hidden shadow-[0_0_10px_rgba(16,185,129,0.1)]">
                     <Avatar className="h-full w-full">
                       <AvatarImage src={userProfile?.photoURL || user.photoURL || ""} alt={displayName} />
                       <AvatarFallback className="bg-secondary text-primary">
-                        <User className="h-6 w-6" />
+                        <User className="h-5 w-5 md:h-6 md:w-6" />
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 mt-2 bg-card border-white/10" align="end" forceMount>
+                <DropdownMenuContent className="w-56 mt-2 bg-card border-white/10" align="start" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-bold leading-none premium-emerald-text">{displayName}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
+                      <p className="text-[10px] leading-none text-muted-foreground">
                         {user.email}
                       </p>
                     </div>
@@ -81,19 +69,32 @@ export function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <span className="hidden md:inline-block text-sm premium-emerald-text tracking-wide font-semibold">
+              <span className="hidden sm:inline-block text-xs md:text-sm premium-emerald-text tracking-wide font-semibold">
                 {displayName}
               </span>
             </div>
           ) : !isUserLoading && (
             <Link href="/login">
-              <Button variant="ghost" className="gap-2 text-primary hover:text-white hover:bg-white/5 font-bold transition-all">
-                <LogIn className="h-4 w-4" />
+              <Button variant="ghost" className="gap-2 h-9 text-[10px] md:text-xs text-primary hover:text-white hover:bg-white/5 font-bold transition-all uppercase tracking-widest">
+                <LogIn className="h-3 w-3 md:h-4 md:w-4" />
                 <span>Entrar</span>
               </Button>
             </Link>
           )}
         </div>
+
+        {/* Centro: Logotipo */}
+        <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 md:gap-3 group">
+          <div className="bg-gradient-to-br from-primary to-accent p-1.5 md:p-2.5 rounded-xl md:rounded-2xl text-black group-hover:scale-110 transition-transform duration-500">
+            <PawPrint className="w-5 h-5 md:w-7 md:h-7" />
+          </div>
+          <span className="font-headline font-bold text-xl md:text-2xl tracking-tighter text-white group-hover:text-primary transition-colors">
+            Vet<span className="text-primary">AI</span>
+          </span>
+        </Link>
+
+        {/* Lado Direito: Espaçador para manter equilíbrio */}
+        <div className="flex-1" />
       </div>
     </header>
   );

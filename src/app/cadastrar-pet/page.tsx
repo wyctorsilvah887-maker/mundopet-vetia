@@ -95,34 +95,34 @@ export default function CadastrarPetPage() {
   return (
     <div className="flex flex-col min-h-screen bg-black">
       <Navbar />
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
+      <main className="flex-1 container mx-auto px-4 py-6 md:py-8 max-w-2xl">
         <Button 
           variant="ghost" 
           onClick={() => router.back()} 
-          className="mb-6 text-muted-foreground hover:text-primary transition-colors"
+          className="mb-4 md:mb-6 text-muted-foreground hover:text-primary transition-colors text-xs md:text-sm h-8 md:h-10"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-2 h-3 w-3 md:h-4 md:w-4" />
           Voltar
         </Button>
 
-        <Card className="border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl overflow-hidden rounded-[2rem]">
-          <div className="h-1.5 w-full bg-gradient-to-r from-primary via-accent to-primary" />
-          <CardHeader className="space-y-4 pt-8">
-            <CardTitle className="text-3xl font-headline font-bold text-white tracking-tighter">
+        <Card className="border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl overflow-hidden rounded-[1.5rem] md:rounded-[2rem]">
+          <div className="h-1 w-full bg-gradient-to-r from-primary via-accent to-primary" />
+          <CardHeader className="space-y-2 md:space-y-4 pt-6 md:pt-8">
+            <CardTitle className="text-2xl md:text-3xl font-headline font-bold text-white tracking-tighter">
               Novo <span className="premium-emerald-text">Pet</span>
             </CardTitle>
-            <CardDescription className="text-muted-foreground text-lg">
-              Preencha os detalhes para um acompanhamento personalizado.
+            <CardDescription className="text-muted-foreground text-sm md:text-lg">
+              Preencha os detalhes para um acompanhamento inteligente.
             </CardDescription>
           </CardHeader>
           
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
               {/* Foto do Pet */}
               <div className="flex flex-col items-center gap-4">
                 <div 
                   onClick={() => fileInputRef.current?.click()}
-                  className="relative w-40 h-40 rounded-[2.5rem] bg-white/5 border-2 border-dashed border-white/20 flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 hover:border-primary transition-all group overflow-hidden shadow-inner"
+                  className="relative w-28 h-28 md:w-40 md:h-40 rounded-[1.5rem] md:rounded-[2.5rem] bg-white/5 border-2 border-dashed border-white/20 flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 hover:border-primary transition-all group overflow-hidden"
                 >
                   {photoPreview ? (
                     <Image 
@@ -132,9 +132,9 @@ export default function CadastrarPetPage() {
                       className="object-cover"
                     />
                   ) : (
-                    <div className="text-center p-4">
-                      <Camera className="w-10 h-10 text-muted-foreground group-hover:text-primary mx-auto mb-2" />
-                      <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Foto do Pet</span>
+                    <div className="text-center p-2">
+                      <Camera className="w-6 h-6 md:w-10 md:h-10 text-muted-foreground group-hover:text-primary mx-auto mb-1 md:mb-2" />
+                      <span className="text-[8px] md:text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Adicionar Foto</span>
                     </div>
                   )}
                   <input 
@@ -147,22 +147,22 @@ export default function CadastrarPetPage() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-widest text-muted-foreground">Nome do Pet</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Nome do Pet</Label>
                   <Input 
                     placeholder="Ex: Max" 
-                    className="h-12 bg-white/5 border-white/10 rounded-xl focus:border-primary/50"
+                    className="h-10 md:h-12 bg-white/5 border-white/10 rounded-lg md:rounded-xl focus:border-primary/50 text-sm"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-widest text-muted-foreground">Espécie</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Espécie</Label>
                   <Select onValueChange={setSpecies} required>
-                    <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl">
+                    <SelectTrigger className="h-10 md:h-12 bg-white/5 border-white/10 rounded-lg md:rounded-xl text-sm">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-white/10">
@@ -173,22 +173,22 @@ export default function CadastrarPetPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-widest text-muted-foreground">Raça</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Raça</Label>
                   <Input 
                     placeholder="Ex: Golden Retriever" 
-                    className="h-12 bg-white/5 border-white/10 rounded-xl focus:border-primary/50"
+                    className="h-10 md:h-12 bg-white/5 border-white/10 rounded-lg md:rounded-xl focus:border-primary/50 text-sm"
                     value={breed}
                     onChange={(e) => setBreed(e.target.value)}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-widest text-muted-foreground">Idade (Anos)</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Idade (Anos)</Label>
                   <Input 
                     type="number" 
                     placeholder="Ex: 3" 
-                    className="h-12 bg-white/5 border-white/10 rounded-xl focus:border-primary/50"
+                    className="h-10 md:h-12 bg-white/5 border-white/10 rounded-lg md:rounded-xl focus:border-primary/50 text-sm"
                     value={age}
                     onChange={(e) => setAge(e.target.value)}
                   />
@@ -197,10 +197,10 @@ export default function CadastrarPetPage() {
 
               <Button 
                 type="submit" 
-                className="w-full h-14 text-lg font-bold bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/20 transition-all rounded-2xl active:scale-95" 
+                className="w-full h-12 md:h-14 text-sm md:text-lg font-bold bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/20 transition-all rounded-lg md:rounded-2xl active:scale-95" 
                 disabled={loading}
               >
-                {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : 'Finalizar Cadastro Premium'}
+                {loading ? <Loader2 className="mr-2 h-5 w-5 md:h-6 md:w-6 animate-spin" /> : 'Finalizar Cadastro'}
               </Button>
             </form>
           </CardContent>
