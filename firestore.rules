@@ -1,87 +1,33 @@
 /**
  * Firestore Security Rules
  *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model designed for privacy and scalability. 
- * Access is primarily governed by the user's authenticated UID matching the document path.
- *
- * Data Structure:
- * The data is organized hierarchically starting at the user level:
- * - /users/{userId}: Private profile information.
- * - /users/{userId}/analysisResults/{analysisResultId}: AI analysis history owned by the user.
- *
- * Key Security Decisions:
- * - Ownership-Based Access: All data is nested under a `{userId}` path. Access is granted only if `request.auth.uid` matches this path parameter.
- * - Authorization Independence: Critical ownership fields (like `userId`) are denormalized into subcollection documents. 
- *   This allows rules to verify ownership using the document's own data or its path without performing additional `get()` lookups.
- * - Immutable Identity: Relational fields that link data to a user (e.g., `userId` or `id` on a profile) are enforced as immutable after creation.
- * - Prototyping Flexibility: While authorization is strictly enforced, schema validation for content fields is omitted to allow for rapid frontend iteration.
+ * Enforces ownership-based access where users can only read and write their own documents.
  */
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- GLOBAL HELPER FUNCTIONS ---
-
-    /**
-     * @description Checks if the request is made by a signed-in user.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * @description Validates that the authenticated user's UID matches the provided userId.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * @description Validates ownership for existing documents (updates/deletes).
-     * Ensures the document exists and the owner matches the path.
-     */
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
-    // --- COLLECTION RULES ---
-
-    /**
-     * @description Rules for the UserProfile entity.
-     * @path /users/{userId}
-     * @allow (create) if auth.uid == "user_123" and data.id == "user_123"
-     * @deny (list) if auth.uid != userId
-     * @principle Enforces path-based ownership and validates relational integrity on creation.
-     */
     match /users/{userId} {
       allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id && request.resource.data.externalAuthUserId == resource.data.externalAuthUserId;
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
 
-      /**
-       * @description Rules for the AnalysisResult entity.
-       * @path /users/{userId}/analysisResults/{analysisResultId}
-       * @allow (get) if auth.uid matches the parent userId.
-       * @deny (create) if the internal userId field does not match the parent path.
-       * @principle Uses hierarchical path authorization and enforces relational consistency.
-       */
       match /analysisResults/{analysisResultId} {
         allow get, list: if isOwner(userId);
         allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-        allow delete: if isExistingOwner(userId);
+        allow update: if isOwner(userId) && request.resource.data.userId == userId;
+        allow delete: if isOwner(userId);
       }
     }
   }
 }
-
-/** 
- * SECURITY SUMMARY:
- * 1. Unauthorized Access: Prevented. All paths require `request.auth.uid` to match the `{userId}` wildcard.
- * 2. Data Leakage: Users cannot list or get documents belonging to other user IDs.
- * 3. Identity Spoofing: The `create` rules enforce that the internal `userId` or `id` fields match the authenticated user.
- * 4. Relational Integrity: Update rules prevent users from "re-assigning" documents to different owners by making ownership fields immutable.
- */
