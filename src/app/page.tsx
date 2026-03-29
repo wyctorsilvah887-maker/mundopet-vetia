@@ -3,10 +3,8 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Navbar } from '@/components/layout/Navbar';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Camera, ShieldCheck, Zap, HeartPulse, Loader2, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, HeartPulse, Loader2 } from 'lucide-react';
 import { useUser } from '@/firebase';
 
 export default function Home() {
@@ -41,35 +39,10 @@ export default function Home() {
           <div className="inline-block px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-bold tracking-widest uppercase mb-4 animate-pulse">
             Inteligência Artificial de Elite
           </div>
-          <h1 className="text-5xl md:text-7xl font-headline font-bold text-white tracking-tighter">
-            Novo <span className="premium-emerald-text">Patamar</span>
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Diagnósticos inteligentes e nutrição de precisão para quem não abre mão do melhor para o seu pet.
-          </p>
+          {/* Textos de hero removidos conforme solicitação */}
         </div>
 
-        <div className="flex justify-center max-w-2xl mx-auto">
-          <Link href="/analise-imagem" className="group w-full">
-            <Card className="h-full border border-white/5 bg-gradient-to-b from-white/[0.03] to-transparent hover:border-accent/40 transition-all duration-500 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-[80px] group-hover:bg-accent/10 transition-all" />
-              <CardHeader className="pt-10 px-8">
-                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/10 group-hover:border-accent/50 group-hover:scale-110 transition-all duration-500 shadow-inner">
-                  <Camera className="w-8 h-8 text-accent" />
-                </div>
-                <CardTitle className="text-3xl font-headline font-bold text-white mb-2">Visão Computacional</CardTitle>
-                <CardDescription className="text-lg text-muted-foreground leading-relaxed">
-                  Digitalize rótulos e analise sintomas visuais com precisão cirúrgica através de inteligência artificial avançada.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-8 pb-10">
-                <div className="flex items-center text-accent font-bold group-hover:translate-x-2 transition-transform">
-                  Capturar foto <ArrowRight className="ml-2 w-5 h-5" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
+        {/* Card de Visão Computacional removido conforme solicitação */}
 
         <section className="mt-32 py-16 border-y border-white/5 text-center">
           <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
