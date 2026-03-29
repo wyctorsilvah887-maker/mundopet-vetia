@@ -123,7 +123,7 @@ export default function LoginPage() {
             toast({
               variant: "destructive",
               title: "Aviso de Upload",
-              description: "Não foi possível subir a foto (CORS/Bucket). Continuando com foto padrão.",
+              description: "Não foi possível subir a foto. Continuando com foto padrão.",
             });
           }
         }
@@ -159,8 +159,6 @@ export default function LoginPage() {
         description: error.message || "Ocorreu um problema inesperado.",
       });
       setIsLoading(false);
-    } finally {
-      // Se redirecionar, o componente desmonta, senão o loading para.
     }
   };
 
