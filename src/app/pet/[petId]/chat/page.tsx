@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, use } from 'react';
@@ -8,10 +9,12 @@ import { Input } from '@/components/ui/input';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
 import { petChat } from '@/ai/flows/pet-chat-flow';
-import { Loader2, Send, ArrowLeft, Bot, User, Sparkles, History } from 'lucide-react';
+import { analyzeImagePetHealth } from '@/ai/flows/analyze-image-pet-health-flow';
+import { Loader2, Send, ArrowLeft, Bot, User, Sparkles, History, Paperclip, Camera, Image as ImageIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   role: 'user' | 'model';
@@ -24,12 +27,14 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
   
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [greetingProcessed, setGreetingProcessed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Referência do Pet
   const petRef = useMemoFirebase(() => {
@@ -39,13 +44,13 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
   const { data: pet, isLoading: isPetLoading } = useDoc(petRef);
 
-  // Busca histórico de mensagens do Firestore (Memória Real)
+  // Busca histórico de mensagens do Firestore
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
     return query(
       collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages'),
       orderBy('createdAt', 'asc'),
-      limit(50) // Limite generoso para memória persistente
+      limit(50)
     );
   }, [firestore, user?.uid, petId]);
 
@@ -57,7 +62,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     }
   }, [user, isUserLoading, router]);
 
-  // Lógica de Saudação Única (WS Studios Trigger)
+  // Lógica de Saudação Única
   useEffect(() => {
     const shouldGreet = 
       pet && 
@@ -68,7 +73,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       !greetingProcessed;
 
     if (shouldGreet) {
-      setGreetingProcessed(true); // Trava local imediata para evitar duplicidade em re-renders
+      setGreetingProcessed(true);
       
       const triggerInitialGreeting = async () => {
         setIsSending(true);
@@ -102,7 +107,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     }
   }, [pet, firestoreMessages, isSending, isMessagesLoading, user, firestore, petId, greetingProcessed]);
 
-  // Scroll automático para a última mensagem
+  // Scroll automático
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -119,7 +124,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
     const messagesRef = collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages');
 
-    // Salva mensagem do usuário com timestamp preciso para ordenação
     addDocumentNonBlocking(messagesRef, {
       role: 'user',
       content: userMessage,
@@ -135,12 +139,10 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           age: pet.age,
         },
         message: userMessage,
-        // Passa o histórico real para a "Memória muito boa" da IA
         history: firestoreMessages?.map(m => ({ role: m.role, content: m.content })) || [],
       });
 
       if (response) {
-        // Salva resposta da IA
         addDocumentNonBlocking(messagesRef, {
           role: 'model',
           content: response,
@@ -154,12 +156,61 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !pet || !user || !firestore) return;
+
+    setIsSending(true);
+    const messagesRef = collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages');
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Image = reader.result as string;
+      
+      addDocumentNonBlocking(messagesRef, {
+        role: 'user',
+        content: "[Foto enviada para análise]",
+        createdAt: new Date().toISOString(),
+      });
+
+      try {
+        const analysis = await analyzeImagePetHealth({
+          image: base64Image,
+          description: `Análise solicitada para ${pet.name} (${pet.species})`,
+        });
+
+        const fullResponse = `[LAUDO TÉCNICO VET AI]\n\nIdentificação: ${analysis.identification}\n\nAnálise: ${analysis.analysis}\n\nSugestões: ${analysis.suggestions}`;
+
+        addDocumentNonBlocking(messagesRef, {
+          role: 'model',
+          content: fullResponse,
+          createdAt: new Date().toISOString(),
+        });
+
+        toast({
+          title: "Análise Concluída",
+          description: "A imagem foi processada com sucesso.",
+        });
+      } catch (error) {
+        console.error("Erro na análise de imagem:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro na Análise",
+          description: "Não foi possível processar a imagem.",
+        });
+      } finally {
+        setIsSending(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   if (isUserLoading || isPetLoading || isMessagesLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em]">Recuperando Memória</span>
+          <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em]">Sincronizando...</span>
         </div>
       </div>
     );
@@ -191,12 +242,12 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                 {pet.name}
                 <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
               </h2>
-              <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest mt-1 flex items-center gap-1">
-                <History className="w-3 h-3" /> Memória Sincronizada
+              <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest mt-1">
+                {pet.species} • {pet.breed}
               </p>
             </div>
           </div>
-          <div className="bg-primary/5 border border-primary/20 px-3 py-1 rounded-full flex items-center gap-2">
+          <div className="hidden sm:flex bg-primary/5 border border-primary/20 px-3 py-1 rounded-full items-center gap-2">
             <Sparkles className="w-3 h-3 text-primary" />
             <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">Elite WS Studios</span>
           </div>
@@ -244,6 +295,27 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           <div className="relative group">
             <div className="absolute inset-0 bg-primary/10 blur-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-700 pointer-events-none" />
             <div className="relative flex items-center gap-2 bg-white/5 border border-white/10 p-1.5 md:p-2 rounded-2xl backdrop-blur-2xl focus-within:border-primary/40 transition-all shadow-2xl">
+              
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                accept="image/*" 
+                className="hidden" 
+              />
+              
+              <Button 
+                type="button"
+                variant="ghost" 
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-muted-foreground hover:text-primary hover:bg-white/5 transition-colors shrink-0 h-10 w-10"
+                disabled={isSending}
+                title="Anexar foto (Câmera ou Galeria)"
+              >
+                <Paperclip className="w-5 h-5" />
+              </Button>
+
               <Input 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -251,6 +323,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                 className="flex-1 bg-transparent border-none focus-visible:ring-0 text-white placeholder:text-muted-foreground text-sm md:text-base"
                 disabled={isSending}
               />
+              
               <Button 
                 type="submit" 
                 size="icon" 
@@ -262,7 +335,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
             </div>
           </div>
           <p className="text-[9px] text-center text-muted-foreground/30 mt-3 uppercase tracking-[0.4em] font-bold">
-            Elite AI Technology • Histórico Permanente
+            Elite AI Technology • Análise Visual Integrada
           </p>
         </form>
       </main>
