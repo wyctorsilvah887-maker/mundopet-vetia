@@ -1,12 +1,16 @@
+
 "use client";
 
 import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Camera, Upload, X, Search, FileText, CheckCircle2, AlertTriangle, Stethoscope } from 'lucide-react';
+import { Loader2, Upload, X, Search, FileText, CheckCircle2, AlertTriangle, Stethoscope } from 'lucide-react';
 import { analyzeImagePetHealth, type AnalyzeImagePetHealthOutput } from '@/ai/flows/analyze-image-pet-health-flow';
 import Image from 'next/image';
+import { useUser, useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export function ImageAnalysisForm() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -14,6 +18,9 @@ export function ImageAnalysisForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalyzeImagePetHealthOutput | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { user } = useUser();
+  const firestore = useFirestore();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,6 +53,20 @@ export function ImageAnalysisForm() {
         description: description || 'Nenhuma descrição adicional fornecida.',
       });
       setResult(data);
+
+      // Salva no banco de dados se o usuário estiver logado
+      if (user && firestore) {
+        const analysisResultsRef = collection(firestore, 'users', user.uid, 'analysisResults');
+        addDocumentNonBlocking(analysisResultsRef, {
+          userId: user.uid,
+          analysisType: 'image',
+          inputDescription: description || 'Análise de imagem sem descrição.',
+          aiResponse: JSON.stringify(data),
+          createdAt: new Date().toISOString(),
+          // Nota: inputDataRef poderia ser uma URL do Firebase Storage aqui, 
+          // mas para este protótipo estamos focando no registro da análise.
+        });
+      }
     } catch (error) {
       console.error("Error analyzing image:", error);
     } finally {

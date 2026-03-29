@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -7,11 +8,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, AlertCircle, CheckCircle2, Info, AlertTriangle, Stethoscope } from 'lucide-react';
 import { analyzeTextualPetHealth, type AnalyzeTextualPetHealthOutput } from '@/ai/flows/analyze-textual-pet-health';
 import { Badge } from '@/components/ui/badge';
+import { useUser, useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export function TextAnalysisForm() {
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalyzeTextualPetHealthOutput | null>(null);
+  
+  const { user } = useUser();
+  const firestore = useFirestore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +29,18 @@ export function TextAnalysisForm() {
     try {
       const data = await analyzeTextualPetHealth({ description });
       setResult(data);
+
+      // Salva no banco de dados se o usuário estiver logado
+      if (user && firestore) {
+        const analysisResultsRef = collection(firestore, 'users', user.uid, 'analysisResults');
+        addDocumentNonBlocking(analysisResultsRef, {
+          userId: user.uid,
+          analysisType: 'text',
+          inputDescription: description,
+          aiResponse: JSON.stringify(data),
+          createdAt: new Date().toISOString(),
+        });
+      }
     } catch (error) {
       console.error("Error analyzing text:", error);
     } finally {
