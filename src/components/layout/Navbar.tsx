@@ -1,8 +1,9 @@
+
 "use client";
 
 import Link from 'next/link';
 import { PawPrint, LogIn, User, LogOut } from 'lucide-react';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,10 +15,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { doc } from 'firebase/firestore';
 
 export function Navbar() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
+
+  // Buscamos os dados extras do perfil (como a foto em base64) no Firestore
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: userProfile } = useDoc(userProfileRef);
 
   const handleSignOut = () => {
     signOut(auth);
@@ -45,7 +56,8 @@ export function Navbar() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full border-2 border-primary/20">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={user.photoURL || ""} alt={user.displayName || "User"} />
+                        {/* Prioriza a foto do Firestore (Base64) ou a do Auth (Google) */}
+                        <AvatarImage src={userProfile?.photoURL || user.photoURL || ""} alt={user.displayName || "User"} />
                         <AvatarFallback className="bg-primary/10 text-primary">
                           <User className="h-5 w-5" />
                         </AvatarFallback>
@@ -55,7 +67,7 @@ export function Navbar() {
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.displayName || 'Usuário'}</p>
+                        <p className="text-sm font-medium leading-none">{userProfile?.displayName || user.displayName || 'Usuário'}</p>
                         <p className="text-xs leading-none text-muted-foreground">
                           {user.email}
                         </p>

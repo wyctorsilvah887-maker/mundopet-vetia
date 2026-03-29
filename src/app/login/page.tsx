@@ -36,7 +36,6 @@ export default function LoginPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Captura o resultado do redirecionamento do Google e salva no Firestore
   useEffect(() => {
     if (auth && firestore) {
       getRedirectResult(auth)
@@ -72,30 +71,33 @@ export default function LoginPage() {
     }
   }, [auth, firestore, toast]);
 
-  // Redireciona se já estiver logado (independente do loading local do botão)
   useEffect(() => {
-    if (user && !isUserLoading) {
+    if (user && !isUserLoading && !isLoading) {
       router.push('/');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, isLoading]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) { 
+      if (file.size > 500 * 1024) { 
         toast({
           variant: "destructive",
           title: "Arquivo muito grande",
-          description: "Por favor, escolha uma imagem menor que 1MB.",
+          description: "Por favor, escolha uma imagem menor que 500KB para garantir a performance.",
         });
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoURL(reader.result as string);
+        setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const setImagePreview = (base64: string) => {
+    setPhotoURL(base64);
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -107,15 +109,13 @@ export default function LoginPage() {
       if (isSignUp) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const finalDisplayName = displayName || email.split('@')[0];
-        const finalPhotoURL = photoURL || `https://picsum.photos/seed/${userCredential.user.uid}/200/200`;
-
-        // 1. Atualiza Perfil no Auth
+        
+        // Firebase Auth photoURL tem limite de caracteres (não aceita Base64 longo)
+        // Por isso, salvamos apenas no Firestore e deixamos o Auth simplificado
         await updateProfile(userCredential.user, {
-          displayName: finalDisplayName,
-          photoURL: finalPhotoURL
+          displayName: finalDisplayName
         });
 
-        // 2. Salva no Firestore
         if (firestore) {
           const userRef = doc(firestore, 'users', userCredential.user.uid);
           const userProfile = {
@@ -123,10 +123,11 @@ export default function LoginPage() {
             externalAuthUserId: userCredential.user.uid,
             email: userCredential.user.email,
             displayName: finalDisplayName,
-            photoURL: finalPhotoURL,
+            photoURL: photoURL || `https://picsum.photos/seed/${userCredential.user.uid}/200/200`,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           };
+          // Usamos setDocumentNonBlocking para salvar os dados no Firestore
           setDocumentNonBlocking(userRef, userProfile, { merge: true });
         }
 
@@ -135,7 +136,6 @@ export default function LoginPage() {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Bem-vindo de volta!", description: "Login realizado com sucesso." });
       }
-      // O redirect será feito pelo useEffect monitorando 'user'
     } catch (error: any) {
       toast({
         variant: "destructive",
