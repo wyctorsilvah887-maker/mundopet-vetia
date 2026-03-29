@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from 'react';
@@ -61,7 +60,7 @@ export default function Home() {
           {pets && pets.length > 0 ? (
             <div className="flex flex-wrap justify-center gap-6 md:gap-12 animate-in fade-in zoom-in duration-700">
               {pets.map((pet) => (
-                <div key={pet.id} className="flex flex-col items-center gap-3 group cursor-pointer">
+                <Link key={pet.id} href={`/pet/${pet.id}/chat`} className="flex flex-col items-center gap-3 group cursor-pointer">
                   <div className="relative w-24 h-24 md:w-40 md:h-40 rounded-full p-1 bg-gradient-to-br from-primary via-accent to-primary shadow-[0_0_20px_rgba(16,185,129,0.2)] transition-transform duration-500 group-hover:scale-105">
                     <div className="relative w-full h-full rounded-full overflow-hidden border-2 md:border-4 border-black">
                       <Image 
@@ -80,7 +79,7 @@ export default function Home() {
                       {pet.species}
                     </p>
                   </div>
-                </div>
+                </Link>
               ))}
               
               {/* Botão Adicionar Mais */}
