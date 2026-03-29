@@ -22,7 +22,7 @@ export function Navbar() {
   const auth = useAuth();
   const firestore = useFirestore();
 
-  // Buscamos os dados extras do perfil (como a foto em base64) no Firestore
+  // Buscamos os dados extras do perfil no Firestore
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'users', user.uid);
@@ -33,6 +33,8 @@ export function Navbar() {
   const handleSignOut = () => {
     signOut(auth);
   };
+
+  const displayName = userProfile?.displayName || user?.displayName || 'Usuário';
 
   return (
     <header className="border-b bg-card/50 backdrop-blur-md sticky top-0 z-50">
@@ -48,38 +50,42 @@ export function Navbar() {
           <span className="font-headline font-bold text-xl tracking-tight text-primary">Vet AI</span>
         </Link>
 
-        <div className="flex-1 flex justify-end items-center">
+        <div className="flex-1 flex justify-end items-center gap-3">
           {!isUserLoading && (
             <>
               {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full border-2 border-primary/20">
-                      <Avatar className="h-9 w-9">
-                        {/* Prioriza a foto do Firestore (Base64) ou a do Auth (Google) */}
-                        <AvatarImage src={userProfile?.photoURL || user.photoURL || ""} alt={user.displayName || "User"} />
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          <User className="h-5 w-5" />
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{userProfile?.displayName || user.displayName || 'Usuário'}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive cursor-pointer">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Sair</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <>
+                  <span className="hidden md:inline-block text-sm font-semibold text-white/90">
+                    Olá, <span className="text-primary">{displayName.split(' ')[0]}</span>
+                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-10 w-10 rounded-full border-2 border-primary/20 hover:border-primary/50 transition-colors">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={userProfile?.photoURL || user.photoURL || ""} alt={displayName} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            <User className="h-5 w-5" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-bold leading-none">{displayName}</p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {user.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive cursor-pointer">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Sair</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
               ) : (
                 <Link href="/login">
                   <Button variant="ghost" size="sm" className="gap-2 text-primary hover:text-primary hover:bg-primary/10">
