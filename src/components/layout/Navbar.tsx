@@ -37,7 +37,7 @@ export function Navbar() {
   return (
     <header className="border-b border-white/5 bg-black/60 backdrop-blur-xl sticky top-0 z-50">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between relative">
-        {/* Lado Esquerdo: Espaçador para manter o logo centralizado */}
+        {/* Lado Esquerdo: Espaçador */}
         <div className="flex-1" />
 
         {/* Centro: Logotipo */}
@@ -50,16 +50,13 @@ export function Navbar() {
           </span>
         </Link>
 
-        {/* Lado Direito: Perfil ou Login */}
+        {/* Lado Direito: Perfil (Avatar à esquerda, Nome à direita) */}
         <div className="flex-1 flex justify-end items-center gap-4">
           {!isUserLoading && user ? (
-            <div className="flex items-center gap-4">
-              <span className="hidden md:inline-block text-sm premium-emerald-text tracking-wide">
-                {displayName}
-              </span>
+            <div className="flex items-center gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-11 w-11 rounded-full border-2 border-primary/30 hover:border-primary transition-all duration-300 p-0 overflow-hidden">
+                  <Button variant="ghost" className="relative h-11 w-11 rounded-full border-2 border-primary/30 hover:border-primary transition-all duration-300 p-0 overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                     <Avatar className="h-full w-full">
                       <AvatarImage src={userProfile?.photoURL || user.photoURL || ""} alt={displayName} />
                       <AvatarFallback className="bg-secondary text-primary">
@@ -84,6 +81,9 @@ export function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <span className="hidden md:inline-block text-sm premium-emerald-text tracking-wide font-semibold">
+                {displayName}
+              </span>
             </div>
           ) : !isUserLoading && (
             <Link href="/login">
