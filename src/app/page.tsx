@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MessageSquareText, Camera, ShieldCheck, Zap, HeartPulse, Loader2, ArrowRight } from 'lucide-react';
+import { Camera, ShieldCheck, Zap, HeartPulse, Loader2, ArrowRight } from 'lucide-react';
 import { useUser } from '@/firebase';
 
 export default function Home() {
@@ -41,30 +41,16 @@ export default function Home() {
           <div className="inline-block px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-bold tracking-widest uppercase mb-4 animate-pulse">
             Inteligência Artificial de Elite
           </div>
+          <h1 className="text-5xl md:text-7xl font-headline font-bold text-white tracking-tighter">
+            Novo <span className="premium-emerald-text">Patamar</span>
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Diagnósticos inteligentes e nutrição de precisão para quem não abre mão do melhor para o seu pet.
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          <Link href="/analise-texto" className="group">
-            <Card className="h-full border border-white/5 bg-gradient-to-b from-white/[0.03] to-transparent hover:border-primary/40 transition-all duration-500 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[80px] group-hover:bg-primary/10 transition-all" />
-              <CardHeader className="pt-10 px-8">
-                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/10 group-hover:border-primary/50 group-hover:scale-110 transition-all duration-500 shadow-inner">
-                  <MessageSquareText className="w-8 h-8 text-primary" />
-                </div>
-                <CardTitle className="text-3xl font-headline font-bold text-white mb-2">Análise de Texto</CardTitle>
-                <CardDescription className="text-lg text-muted-foreground leading-relaxed">
-                  Descreva sintomas e comportamentos para obter um parecer imediato da nossa IA.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-8 pb-10">
-                <div className="flex items-center text-primary font-bold group-hover:translate-x-2 transition-transform">
-                  Começar agora <ArrowRight className="ml-2 w-5 h-5" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/analise-imagem" className="group">
+        <div className="flex justify-center max-w-2xl mx-auto">
+          <Link href="/analise-imagem" className="group w-full">
             <Card className="h-full border border-white/5 bg-gradient-to-b from-white/[0.03] to-transparent hover:border-accent/40 transition-all duration-500 shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-[80px] group-hover:bg-accent/10 transition-all" />
               <CardHeader className="pt-10 px-8">
@@ -73,7 +59,7 @@ export default function Home() {
                 </div>
                 <CardTitle className="text-3xl font-headline font-bold text-white mb-2">Visão Computacional</CardTitle>
                 <CardDescription className="text-lg text-muted-foreground leading-relaxed">
-                  Digitalize rótulos e analise sintomas visuais com precisão cirúrgica.
+                  Digitalize rótulos e analise sintomas visuais com precisão cirúrgica através de inteligência artificial avançada.
                 </CardDescription>
               </CardHeader>
               <CardContent className="px-8 pb-10">
