@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -29,16 +30,30 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const auth = useAuth();
   const { user } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Captura o resultado do redirecionamento do Google
+  // Captura o resultado do redirecionamento do Google e salva no Firestore
   useEffect(() => {
-    if (auth) {
+    if (auth && firestore) {
       getRedirectResult(auth)
         .then((result) => {
           if (result) {
+            const { user: googleUser } = result;
+            const userRef = doc(firestore, 'users', googleUser.uid);
+            const userProfile = {
+              id: googleUser.uid,
+              externalAuthUserId: googleUser.uid,
+              email: googleUser.email,
+              displayName: googleUser.displayName || googleUser.email?.split('@')[0],
+              photoURL: googleUser.photoURL || `https://picsum.photos/seed/${googleUser.uid}/200/200`,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            
+            setDocumentNonBlocking(userRef, userProfile, { merge: true });
             toast({ title: "Bem-vindo!", description: "Login com Google realizado com sucesso." });
           }
         })
@@ -53,7 +68,7 @@ export default function LoginPage() {
           setIsLoading(false);
         });
     }
-  }, [auth, toast]);
+  }, [auth, firestore, toast]);
 
   // Redireciona se já estiver logado
   useEffect(() => {
@@ -89,10 +104,30 @@ export default function LoginPage() {
     try {
       if (isSignUp) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const finalDisplayName = displayName || email.split('@')[0];
+        const finalPhotoURL = photoURL || `https://picsum.photos/seed/${userCredential.user.uid}/200/200`;
+
+        // 1. Atualiza Perfil no Auth
         await updateProfile(userCredential.user, {
-          displayName: displayName || email.split('@')[0],
-          photoURL: photoURL || `https://picsum.photos/seed/${userCredential.user.uid}/200/200`
+          displayName: finalDisplayName,
+          photoURL: finalPhotoURL
         });
+
+        // 2. Salva no Firestore
+        if (firestore) {
+          const userRef = doc(firestore, 'users', userCredential.user.uid);
+          const userProfile = {
+            id: userCredential.user.uid,
+            externalAuthUserId: userCredential.user.uid,
+            email: userCredential.user.email,
+            displayName: finalDisplayName,
+            photoURL: finalPhotoURL,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          setDocumentNonBlocking(userRef, userProfile, { merge: true });
+        }
+
         toast({ title: "Conta criada!", description: "Bem-vindo ao Vet AI." });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
@@ -112,7 +147,6 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     setIsLoading(true);
     try {
-      // Usando Redirect em vez de Popup para evitar erros de frame/proxy
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
       toast({
