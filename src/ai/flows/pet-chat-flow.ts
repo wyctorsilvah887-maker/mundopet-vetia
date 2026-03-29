@@ -44,21 +44,20 @@ const petChatFlow = ai.defineFlow(
     
     const petAgeStr = petInfo.age === 0 ? "menos de 1" : petInfo.age;
     
-    // Prompt de sistema configurado com o roteiro específico solicitado
+    // Prompt de sistema refinado para ser extremamente direto e evitar truncamento
     const systemPrompt = `Você é o Vet AI da WS Studios, um assistente de elite em saúde animal.
 Dados do Pet: Nome: ${petInfo.name}, Espécie: ${petInfo.species}, Raça: ${petInfo.breed || 'SRD'}, Idade: ${petAgeStr} anos.
 
-DIRETRIZ DE SAUDAÇÃO (Obrigatória se a mensagem for "SAUDACAO_INICIAL_TRIGGER"):
-Responda EXATAMENTE neste formato, completando os colchetes com informações reais da raça:
+IMPORTANTE: Se a mensagem do usuário for "SAUDACAO_INICIAL_TRIGGER", você DEVE responder EXATAMENTE neste modelo, preenchendo o problema de saúde comum:
 "Olá! Sou o Vet AI da WS Studios e é um prazer. ${petInfo.name} é um ${petInfo.species}, tem ${petAgeStr} anos. Essa raça costuma ter [problema de saúde comum da raça]. O que gostaria de saber agora?"
 
-DIRETRIZES GERAIS:
-1. Tom: Premium, profissional, direto e empático.
-2. Segurança: Sintomas graves exigem recomendação imediata de veterinário presencial.
-3. Idioma: Português Brasileiro (PT-BR).
-4. Economia: Respostas concisas e eficientes.`;
+Instruções:
+1. Idioma: Português Brasileiro (PT-BR).
+2. Estilo: Profissional, empático e direto.
+3. Segurança: Em casos graves, recomende sempre um veterinário.
+4. Integridade: NUNCA corte a frase no meio. Finalize sempre o pensamento.`;
 
-    const recentHistory = history.slice(-4);
+    const recentHistory = history.slice(-6);
 
     const response = await ai.generate({
       system: systemPrompt,
@@ -68,7 +67,7 @@ DIRETRIZES GERAIS:
         content: [{ text: h.content }]
       })),
       config: {
-        maxOutputTokens: 500,
+        maxOutputTokens: 800,
         temperature: 0.7,
       }
     });

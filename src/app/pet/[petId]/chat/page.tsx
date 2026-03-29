@@ -44,14 +44,14 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     }
   }, [user, isUserLoading, router]);
 
-  // Trigger de saudação inicial automática com correção de execução única
+  // Trigger de saudação inicial automática otimizada
   useEffect(() => {
     if (pet && messages.length === 0 && !isSending && !hasInitiated) {
       setHasInitiated(true);
       const triggerInitialGreeting = async () => {
         setIsSending(true);
         try {
-          const { response } = await petChat({
+          const result = await petChat({
             petInfo: {
               name: pet.name,
               species: pet.species,
@@ -61,8 +61,9 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
             message: "SAUDACAO_INICIAL_TRIGGER",
             history: [],
           });
-          if (response) {
-            setMessages([{ role: 'model', content: response }]);
+          
+          if (result && result.response) {
+            setMessages([{ role: 'model', content: result.response }]);
           }
         } catch (error) {
           console.error("Erro na saudação inicial:", error);
@@ -169,7 +170,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary text-black' : 'bg-white/10 text-primary border border-white/10'}`}>
                     {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                   </div>
-                  <div className={`p-4 rounded-2xl text-sm leading-relaxed ${
+                  <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                     msg.role === 'user' 
                     ? 'bg-primary/10 text-white border border-primary/20 rounded-tr-none' 
                     : 'bg-white/5 text-muted-foreground border border-white/10 rounded-tl-none'
