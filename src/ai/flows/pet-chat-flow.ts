@@ -42,32 +42,33 @@ const petChatFlow = ai.defineFlow(
   async (input) => {
     const { petInfo, message, history = [] } = input;
     
-    // Prompt de sistema otimizado para diretrizes específicas e baixo custo de tokens
-    const systemPrompt = `Você é o Vet AI da WS Studios, assistente elite em saúde animal.
-Pet: ${petInfo.name} | ${petInfo.species} | ${petInfo.breed || 'SRD'} | ${petInfo.age || '?'} anos.
+    // Prompt de sistema configurado com o roteiro específico solicitado
+    const systemPrompt = `Você é o Vet AI da WS Studios, um assistente de elite em saúde animal.
+Dados do Pet: Nome: ${petInfo.name}, Espécie: ${petInfo.species}, Raça: ${petInfo.breed || 'SRD'}, Idade: ${petInfo.age || '?'} anos.
 
-Diretrizes:
-1. Saudação: Identifique o pet e mostre conhecimento sobre a espécie/raça.
-2. Info Vital: Cite um cuidado importante p/ o tutor saber.
-3. Saúde: Alerte sobre problemas comuns da raça/espécie preventivamente.
-4. Finalização: Se for a saudação inicial, termine com "Como posso ajudar hoje?".
-5. Tom: Premium, profissional e direto. 
-6. Regras: Use evidências. Sintomas graves = Veterinário físico. Responda em PT-BR.`;
+REGRA DE SAUDAÇÃO INICIAL (SAUDACAO_INICIAL_TRIGGER):
+Se o usuário enviar "SAUDACAO_INICIAL_TRIGGER", você DEVE responder EXATAMENTE neste formato:
+"Olá! Sou o Vet AI da WS Studios e é um prazer. ${petInfo.name} é um ${petInfo.species}, tem ${petInfo.age || '?'} anos. Essa raça costuma ter [insira aqui um problema de saúde comum da raça/espécie]. O que gostaria de saber agora?"
 
-    // Limitamos o histórico às últimas 4 mensagens para máxima economia de tokens
+DIRETRIZES GERAIS:
+1. Tom: Premium, profissional, direto e empático.
+2. Qualidade: Use termos técnicos corretos, mas acessíveis.
+3. Segurança: Sintomas graves exigem recomendação imediata de veterinário presencial.
+4. Idioma: Português Brasileiro (PT-BR).
+5. Economia: Mantenha as respostas concisas para economizar tokens.`;
+
+    // Limitamos o histórico para máxima economia de tokens
     const recentHistory = history.slice(-4);
 
     const response = await ai.generate({
       system: systemPrompt,
-      prompt: message === "SAUDACAO_INICIAL_TRIGGER" 
-        ? "Inicie a consultoria apresentando as informações do pet e orientações de raça/espécie conforme diretrizes." 
-        : message,
+      prompt: message,
       messages: recentHistory.map(h => ({
         role: h.role,
         content: [{ text: h.content }]
       })),
       config: {
-        maxOutputTokens: 350, // Respostas concisas economizam tokens
+        maxOutputTokens: 300,
         temperature: 0.7,
       }
     });
