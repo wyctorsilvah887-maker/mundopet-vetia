@@ -1,11 +1,7 @@
 'use server';
 /**
- * @fileOverview Fluxo de IA para chat interativo sobre a saúde do pet.
- * Otimizado para alta retenção de memória e baixo consumo de tokens.
- *
- * - petChat - Função principal que processa a conversa com contexto.
- * - PetChatInput - Dados do pet, mensagem atual e histórico.
- * - PetChatOutput - Resposta textual da IA.
+ * @fileOverview Fluxo de IA para chat interativo.
+ * Otimizado para o Plano Gratuito (Gemini 2.5 Flash) com baixa contagem de tokens.
  */
 
 import { ai } from '@/ai/genkit';
@@ -28,7 +24,7 @@ const PetChatInputSchema = z.object({
 export type PetChatInput = z.infer<typeof PetChatInputSchema>;
 
 const PetChatOutputSchema = z.object({
-  response: z.string().describe('A resposta da IA para o tutor do pet.'),
+  response: z.string().describe('A resposta da IA.'),
 });
 
 export type PetChatOutput = z.infer<typeof PetChatOutputSchema>;
@@ -46,32 +42,25 @@ const petChatFlow = ai.defineFlow(
   async (input) => {
     const { petInfo, message, history = [] } = input;
     
-    // Tratamento de idade para anos ou meses
     const ageValue = petInfo.age || 0;
     const ageSuffix = ageValue === 1 ? 'ano' : 'anos';
     const ageDisplay = ageValue < 1 ? 'menos de 1 ano' : `${ageValue} ${ageSuffix}`;
     
-    const systemPrompt = `Você é o Vet AI da WS Studios, uma inteligência de elite em saúde animal.
-DADOS DO PACIENTE: Nome: ${petInfo.name}, Espécie: ${petInfo.species}, Raça: ${petInfo.breed || 'SRD'}, Idade: ${ageDisplay}.
+    const systemPrompt = `Você é o Vet AI da WS Studios. 
+PACIENTE: ${petInfo.name} (${petInfo.species}, ${petInfo.breed || 'SRD'}, ${ageDisplay}).
 
-MEMÓRIA E CONTEXTO:
-Você tem acesso ao histórico de conversas anterior. Use-o para não repetir perguntas e para manter a continuidade do tratamento ou orientações.
+DIRETRIZES:
+1. Responda em Português Brasileiro.
+2. Seja técnico, mas acolhedor.
+3. Se "SAUDACAO_INICIAL_TRIGGER", responda: "Olá! Sou o Vet AI da WS Studios e é um prazer. ${petInfo.name} é um ${petInfo.species} e tem ${ageDisplay}. Sobre a raça ${petInfo.breed || 'SRD'}, é importante saber que [predisposição de saúde]... O que gostaria de saber agora?"
+4. SEMPRE corrija erros de escrita.
+5. Seja direto para economizar tokens.`;
 
-PROTOCOLO DE SAUDAÇÃO (TRIGGER INICIAL):
-Se o usuário enviar exatamente "SAUDACAO_INICIAL_TRIGGER", responda RIGOROSAMENTE assim:
-"Olá! Sou o Vet AI da WS Studios e é um prazer. ${petInfo.name} é um ${petInfo.species} e tem ${ageDisplay}. Sobre a raça ${petInfo.breed || 'SRD'}, é importante saber que [descrever brevemente característica de saúde ou curiosidade da raça]... O que gostaria de saber agora?"
-
-DIRETRIZES DE OPERAÇÃO:
-1. Idioma: Português Brasileiro formal e técnico, porém acolhedor.
-2. Integridade: Finalize sempre seus pensamentos. Nunca deixe frases incompletas.
-3. Precisão: Se o histórico indicar um problema recorrente, mencione-o.
-4. Segurança: Casos graves exigem recomendação imediata de veterinário presencial.
-5. Ortografia: Revise mentalmente para garantir 0 erros de escrita.`;
-
-    // "Memória muito boa": Mantemos as últimas 10 mensagens (aprox. 5 turnos completos)
-    const recentHistory = history.slice(-10);
+    // Memória Otimizada: 8 mensagens para manter o contexto sem estourar o limite gratuito
+    const recentHistory = history.slice(-8);
 
     const response = await ai.generate({
+      model: 'googleai/gemini-2.5-flash',
       system: systemPrompt,
       prompt: message,
       messages: recentHistory.map(h => ({
@@ -79,8 +68,8 @@ DIRETRIZES DE OPERAÇÃO:
         content: [{ text: h.content }]
       })),
       config: {
-        maxOutputTokens: 450, // Reduzido de 800 para 450 para maior economia de tokens
-        temperature: 0.4, // Reduzido levemente para respostas mais diretas
+        maxOutputTokens: 350, // Reduzido para economia máxima
+        temperature: 0.5,
       }
     });
 

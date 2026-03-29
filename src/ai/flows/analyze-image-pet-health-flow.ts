@@ -1,10 +1,7 @@
 'use server';
 /**
  * @fileOverview Um agente de IA para análise de imagem de saúde animal.
- *
- * - analyzeImagePetHealth - Uma função que gerencia o processo de análise de imagem.
- * - AnalyzeImagePetHealthInput - O tipo de entrada para a função analyzeImagePetHealth.
- * - AnalyzeImagePetHealthOutput - O tipo de retorno para a função analyzeImagePetHealth.
+ * Otimizado para o plano gratuito (Gemini 2.5 Flash).
  */
 
 import {ai} from '@/ai/genkit';
@@ -57,21 +54,19 @@ const analyzeImagePetHealthPrompt = ai.definePrompt({
   name: 'analyzeImagePetHealthPrompt',
   input: {schema: AnalyzeImagePetHealthInputSchema},
   output: {schema: AnalyzeImagePetHealthOutputSchema},
-  prompt: `Você é uma inteligência artificial especialista em saúde e nutrição animal. Seu objetivo é analisar a imagem fornecida juntamente com a descrição e fornecer um relatório detalhado em português brasileiro.
-
-A imagem pode ser:
-1. Um rótulo de ração para análise de ingredientes e informações nutricionais.
-2. Um item alimentar desconhecido para identificação e avaliação de toxicidade ou adequação para pets.
-3. Uma imagem de um sintoma visual do pet (ex: pele, olhos, feridas, fezes) para análise e possíveis sugestões.
-
-Com base na imagem e na descrição, forneça uma análise, identificação e sugestões, se aplicável, no formato JSON especificado.
-
-Descrição adicional fornecida pelo usuário:
-{{{description}}}
+  config: {
+    maxOutputTokens: 500,
+    temperature: 0.3,
+  },
+  prompt: `Você é uma inteligência artificial especialista em saúde e nutrição animal da WS Studios. Analise a imagem e a descrição.
+  
+Descrição do usuário: {{{description}}}
 
 Imagem para análise:
-{{media url=image}}`,
-  model: 'googleai/gemini-1.5-flash',
+{{media url=image}}
+
+Forneça um laudo técnico, direto e preciso em Português Brasileiro.`,
+  model: 'googleai/gemini-2.5-flash',
 });
 
 const analyzeImagePetHealthFlow = ai.defineFlow(
