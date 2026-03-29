@@ -75,10 +75,11 @@ export default function LoginPage() {
   }, [auth, firestore, toast]);
 
   useEffect(() => {
-    if (user && !isUserLoading && !isLoading) {
+    // Redireciona se o usuário estiver logado e não estivermos em processo de carregamento de auth inicial
+    if (user && !isUserLoading) {
       router.push('/');
     }
-  }, [user, isUserLoading, router, isLoading]);
+  }, [user, isUserLoading, router]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,7 +120,7 @@ export default function LoginPage() {
             const snapshot = await uploadBytes(storageRef, photoFile);
             finalPhotoURL = await getDownloadURL(snapshot.ref);
           } catch (uploadError: any) {
-            console.error("Erro no upload da foto (CORS ou permissão):", uploadError);
+            console.error("Erro no upload da foto:", uploadError);
             toast({
               variant: "destructive",
               title: "Aviso de Upload",
@@ -152,12 +153,14 @@ export default function LoginPage() {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Bem-vindo de volta!", description: "Login realizado com sucesso." });
       }
+      // O useEffect de redirecionamento cuidará do resto
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro na autenticação",
         description: error.message || "Ocorreu um problema inesperado.",
       });
+    } finally {
       setIsLoading(false);
     }
   };
