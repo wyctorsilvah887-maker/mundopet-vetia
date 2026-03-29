@@ -28,6 +28,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [hasInitiated, setHasInitiated] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const petRef = useMemoFirebase(() => {
@@ -43,11 +44,39 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     }
   }, [user, isUserLoading, router]);
 
+  // Trigger de saudação inicial automática
+  useEffect(() => {
+    if (pet && messages.length === 0 && !isSending && !hasInitiated) {
+      setHasInitiated(true);
+      const triggerInitialGreeting = async () => {
+        setIsSending(true);
+        try {
+          const { response } = await petChat({
+            petInfo: {
+              name: pet.name,
+              species: pet.species,
+              breed: pet.breed,
+              age: pet.age,
+            },
+            message: "SAUDACAO_INICIAL_TRIGGER",
+            history: [],
+          });
+          setMessages([{ role: 'model', content: response }]);
+        } catch (error) {
+          console.error("Erro na saudação inicial:", error);
+        } finally {
+          setIsSending(false);
+        }
+      };
+      triggerInitialGreeting();
+    }
+  }, [pet, messages.length, isSending, hasInitiated]);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, isSending]);
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -72,7 +101,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
       setMessages(prev => [...prev, { role: 'model', content: response }]);
 
-      // Salva a interação como um resultado de análise no Firestore
       if (user && firestore) {
         const analysisResultsRef = collection(firestore, 'users', user.uid, 'analysisResults');
         addDocumentNonBlocking(analysisResultsRef, {
@@ -133,18 +161,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
         {/* Área de Mensagens */}
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-6 py-4">
-            {messages.length === 0 && (
-              <div className="text-center py-10 space-y-4 animate-in fade-in duration-700">
-                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-white/10">
-                  <Bot className="w-8 h-8 text-primary" />
-                </div>
-                <div className="max-w-xs mx-auto">
-                  <h3 className="text-white font-bold mb-1">Como posso ajudar {pet.name} hoje?</h3>
-                  <p className="text-xs text-muted-foreground">Tire dúvidas sobre alimentação, comportamento ou sintomas leves.</p>
-                </div>
-              </div>
-            )}
-            
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
                 <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
