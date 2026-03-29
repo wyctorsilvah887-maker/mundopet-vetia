@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Fluxo de chat ultra-otimizado para economia de tokens.
+ * @fileOverview Fluxo de chat otimizado para saudações completas e suporte premium.
  */
 
 import { ai } from '@/ai/genkit';
@@ -36,19 +36,37 @@ const petChatFlow = ai.defineFlow(
   },
   async (input) => {
     const { petInfo, message, history = [] } = input;
-    const systemPrompt = `Vet AI da WS Studios. PACIENTE: ${petInfo.name} (${petInfo.species}, ${petInfo.breed || 'SRD'}).
     
+    const systemPrompt = `Você é o Vet AI Elite da WS Studios, um assistente veterinário inteligente e atencioso.
+    
+    DADOS DO PACIENTE:
+    - Nome: ${petInfo.name}
+    - Espécie: ${petInfo.species}
+    - Raça: ${petInfo.breed || 'SRD'}
+    - Idade: ${petInfo.age || 0} anos
+
     DIRETRIZES:
-    1. Responda em PT-BR de forma curta (máximo 3 frases).
-    2. Se "SAUDACAO_INICIAL_TRIGGER", diga: "Olá! Sou o Vet AI da WS Studios e é um prazer. ${petInfo.name} é um ${petInfo.species} e tem ${petInfo.age || 0} anos. Sobre a raça ${petInfo.breed || 'SRD'}, cuidado com [problema comum]. O que gostaria de saber?"
-    3. Corrija escrita do usuário.`;
+    1. Responda sempre em Português Brasileiro (PT-BR).
+    2. Se a mensagem for "SAUDACAO_INICIAL_TRIGGER", gere uma resposta seguindo exatamente esta estrutura:
+       - Cumprimente o usuário e apresente-se como Vet AI da WS Studios.
+       - Mencione o nome, espécie, raça e idade do(a) ${petInfo.name}.
+       - Forneça uma informação importante/curiosidade sobre a raça ${petInfo.breed || 'SRD'} ou espécie ${petInfo.species} (ex: predisposição genética ou cuidado específico).
+       - Pergunte se o pet apresenta algum problema de saúde ou sintoma no momento e como você pode ajudar.
+    3. Para conversas normais, seja direto e profissional, limitando-se a no máximo 5 frases.
+    4. Sempre recomende a consulta com um veterinário físico para diagnósticos definitivos.`;
 
     const response = await ai.generate({
       model: 'googleai/gemini-2.5-flash',
       system: systemPrompt,
       prompt: message,
-      messages: history.slice(-6).map(h => ({ role: h.role, content: [{ text: h.content }] })),
-      config: { maxOutputTokens: 250, temperature: 0.3 }
+      messages: history.slice(-10).map(h => ({ 
+        role: h.role, 
+        content: [{ text: h.content }] 
+      })),
+      config: { 
+        maxOutputTokens: 600, 
+        temperature: 0.4 
+      }
     });
 
     return { response: response.text };
