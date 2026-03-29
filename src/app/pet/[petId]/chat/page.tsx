@@ -1,13 +1,13 @@
+
 "use client";
 
 import { useState, useEffect, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
 import { petChat } from '@/ai/flows/pet-chat-flow';
 import { Loader2, Send, ArrowLeft, Bot, User, Sparkles } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -17,6 +17,7 @@ import Image from 'next/image';
 interface Message {
   role: 'user' | 'model';
   content: string;
+  createdAt?: string;
 }
 
 export default function PetChatPage({ params }: { params: Promise<{ petId: string }> }) {
@@ -25,12 +26,11 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   const firestore = useFirestore();
   const router = useRouter();
   
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [hasInitiated, setHasInitiated] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Referência do Pet
   const petRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
     return doc(firestore, 'users', user.uid, 'pets', petId);
@@ -38,16 +38,26 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
   const { data: pet, isLoading: isPetLoading } = useDoc(petRef);
 
+  // Busca histórico de mensagens do Firestore
+  const messagesQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid || !petId) return null;
+    return query(
+      collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages'),
+      orderBy('createdAt', 'asc')
+    );
+  }, [firestore, user?.uid, petId]);
+
+  const { data: firestoreMessages, isLoading: isMessagesLoading } = useCollection<Message>(messagesQuery);
+
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
 
-  // Trigger de saudação inicial automática otimizada
+  // Trigger de saudação inicial (apenas se não houver histórico)
   useEffect(() => {
-    if (pet && messages.length === 0 && !isSending && !hasInitiated) {
-      setHasInitiated(true);
+    if (pet && firestoreMessages && firestoreMessages.length === 0 && !isSending && !isMessagesLoading) {
       const triggerInitialGreeting = async () => {
         setIsSending(true);
         try {
@@ -62,8 +72,13 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
             history: [],
           });
           
-          if (result && result.response) {
-            setMessages([{ role: 'model', content: result.response }]);
+          if (result && result.response && user && firestore) {
+            const messagesRef = collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages');
+            addDocumentNonBlocking(messagesRef, {
+              role: 'model',
+              content: result.response,
+              createdAt: new Date().toISOString(),
+            });
           }
         } catch (error) {
           console.error("Erro na saudação inicial:", error);
@@ -73,22 +88,30 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       };
       triggerInitialGreeting();
     }
-  }, [pet, messages.length, isSending, hasInitiated]);
+  }, [pet, firestoreMessages, isSending, isMessagesLoading, user, firestore, petId]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isSending]);
+  }, [firestoreMessages, isSending]);
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!input.trim() || isSending || !pet) return;
+    if (!input.trim() || isSending || !pet || !user || !firestore) return;
 
     const userMessage = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsSending(true);
+
+    const messagesRef = collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages');
+
+    // Salva mensagem do usuário
+    addDocumentNonBlocking(messagesRef, {
+      role: 'user',
+      content: userMessage,
+      createdAt: new Date().toISOString(),
+    });
 
     try {
       const { response } = await petChat({
@@ -99,22 +122,16 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           age: pet.age,
         },
         message: userMessage,
-        history: messages,
+        history: firestoreMessages?.map(m => ({ role: m.role, content: m.content })) || [],
       });
 
       if (response) {
-        setMessages(prev => [...prev, { role: 'model', content: response }]);
-
-        if (user && firestore) {
-          const analysisResultsRef = collection(firestore, 'users', user.uid, 'analysisResults');
-          addDocumentNonBlocking(analysisResultsRef, {
-            userId: user.uid,
-            analysisType: 'text',
-            inputDescription: `Chat sobre ${pet.name}: ${userMessage}`,
-            aiResponse: response,
-            createdAt: new Date().toISOString(),
-          });
-        }
+        // Salva resposta da IA
+        addDocumentNonBlocking(messagesRef, {
+          role: 'model',
+          content: response,
+          createdAt: new Date().toISOString(),
+        });
       }
     } catch (error) {
       console.error("Erro no chat:", error);
@@ -123,7 +140,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     }
   };
 
-  if (isUserLoading || isPetLoading) {
+  if (isUserLoading || isPetLoading || isMessagesLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -153,18 +170,18 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
             </div>
             <div>
               <h2 className="text-sm md:text-lg font-bold premium-emerald-text leading-none">{pet.name}</h2>
-              <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest mt-1">Consultoria IA Ativa</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest mt-1">Histórico Persistente</p>
             </div>
           </div>
           <div className="bg-primary/10 px-3 py-1 rounded-full flex items-center gap-2">
             <Sparkles className="w-3 h-3 text-primary" />
-            <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">Elite Mode</span>
+            <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">Elite WS</span>
           </div>
         </div>
 
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-6 py-4">
-            {messages.map((msg, i) => (
+            {firestoreMessages?.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
                 <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary text-black' : 'bg-white/10 text-primary border border-white/10'}`}>
@@ -218,7 +235,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
             </div>
           </div>
           <p className="text-[10px] text-center text-muted-foreground/40 mt-3 uppercase tracking-widest font-bold">
-            Powered by Genkit Gemini 2.5 Elite
+            Histórico salvo automaticamente • Elite System
           </p>
         </form>
       </main>

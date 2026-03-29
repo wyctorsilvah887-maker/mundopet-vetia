@@ -5,48 +5,17 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProfile",
       "type": "object",
-      "description": "Stores core information about a user profile, linking to an external authentication system and enabling personalized app experiences.",
+      "description": "Stores core information about a user profile.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the UserProfile entity."
-        },
-        "externalAuthUserId": {
-          "type": "string",
-          "description": "Unique identifier for the user provided by the external authentication system. This links the internal UserProfile to the authenticated user. (Relationship: External Auth System 1:1 UserProfile)"
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's email address, typically obtained from the external authentication system.",
-          "format": "email"
-        },
-        "displayName": {
-          "type": "string",
-          "description": "The user's preferred display name for the application."
-        },
-        "photoURL": {
-          "type": "string",
-          "description": "The URL of the user's profile picture.",
-          "format": "uri"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the user profile was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating the last time the user profile was updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "externalAuthUserId": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "externalAuthUserId",
-        "email",
-        "displayName",
-        "createdAt"
-      ]
+      "required": ["id", "externalAuthUserId", "email", "displayName", "createdAt"]
     },
     "Pet": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -54,154 +23,66 @@
       "type": "object",
       "description": "Stores information about a user's pet.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Pet."
-        },
-        "userId": {
-          "type": "string",
-          "description": "ID of the user who owns the pet."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the pet."
-        },
-        "species": {
-          "type": "string",
-          "description": "Species of the pet (e.g., dog, cat)."
-        },
-        "breed": {
-          "type": "string",
-          "description": "Breed of the pet."
-        },
-        "age": {
-          "type": "number",
-          "description": "Age of the pet in years."
-        },
-        "photoURL": {
-          "type": "string",
-          "description": "Photo URL of the pet.",
-          "format": "uri"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "species": { "type": "string" },
+        "breed": { "type": "string" },
+        "age": { "type": "number" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "userId", "name", "species", "createdAt"]
+    },
+    "ChatMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatMessage",
+      "type": "object",
+      "description": "Represents a single message in a pet's chat history.",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "content", "createdAt"]
     },
     "AnalysisResult": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "AnalysisResult",
       "type": "object",
-      "description": "Stores the details and outcomes of an AI analysis performed by a user, including input and AI-generated response.",
+      "description": "Stores the details and outcomes of an AI analysis.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the AnalysisResult entity."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the UserProfile who initiated and owns this analysis result. (Relationship: UserProfile 1:N AnalysisResult)"
-        },
-        "analysisType": {
-          "type": "string",
-          "description": "The type of analysis performed. Expected values are 'text' for text-based input analysis (e.g., food descriptions, symptoms) or 'image' for image-based input analysis (e.g., food labels, symptom photos)."
-        },
-        "inputDescription": {
-          "type": "string",
-          "description": "The textual input provided by the user for analysis, or a descriptive text for the image input (e.g., 'photo of dog rash')."
-        },
-        "inputDataRef": {
-          "type": "string",
-          "description": "Optional reference (e.g., a URL to a cloud storage location) to the raw input data, such as an uploaded image file. Applicable primarily for image analysis.",
-          "format": "uri"
-        },
-        "aiResponse": {
-          "type": "string",
-          "description": "The detailed report, analysis, suggestions, or potential diagnoses generated by the AI in response to the user's input."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the AI analysis was performed and this result was generated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "analysisType": { "type": "string" },
+        "inputDescription": { "type": "string" },
+        "aiResponse": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "userId",
-        "analysisType",
-        "inputDescription",
-        "aiResponse",
-        "createdAt"
-      ]
+      "required": ["id", "userId", "analysisType", "inputDescription", "aiResponse", "createdAt"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "google"
-    ]
+    "providers": ["password", "google"]
   },
   "firestore": {
     "structure": [
       {
         "path": "/users/{userId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "Stores core information about a user profile.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the UserProfile."
-            }
-          ]
-        }
+        "definition": { "entityName": "UserProfile" }
       },
       {
         "path": "/users/{userId}/pets/{petId}",
-        "definition": {
-          "entityName": "Pet",
-          "schema": {
-            "$ref": "#/backend/entities/Pet"
-          },
-          "description": "Stores information about a user's pet.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Owner ID."
-            },
-            {
-              "name": "petId",
-              "description": "Pet ID."
-            }
-          ]
-        }
+        "definition": { "entityName": "Pet" }
+      },
+      {
+        "path": "/users/{userId}/pets/{petId}/chatMessages/{messageId}",
+        "definition": { "entityName": "ChatMessage" }
       },
       {
         "path": "/users/{userId}/analysisResults/{analysisResultId}",
-        "definition": {
-          "entityName": "AnalysisResult",
-          "schema": {
-            "$ref": "#/backend/entities/AnalysisResult"
-          },
-          "description": "Stores the details and outcomes of an AI analysis performed by a user.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Owner ID."
-            },
-            {
-              "name": "analysisResultId",
-              "description": "Analysis ID."
-            }
-          ]
-        }
+        "definition": { "entityName": "AnalysisResult" }
       }
-    ],
-    "reasoning": "Standard hierarchical structure for user-owned data."
+    ]
   }
 }

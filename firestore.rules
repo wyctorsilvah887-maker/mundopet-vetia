@@ -2,33 +2,26 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
     function isSignedIn() {
       return request.auth != null;
     }
-
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
     match /users/{userId} {
-      allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow get, list, create, update, delete: if isOwner(userId);
 
       match /pets/{petId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isOwner(userId) && request.resource.data.userId == userId;
-        allow delete: if isOwner(userId);
+        allow get, list, create, update, delete: if isOwner(userId);
+        
+        match /chatMessages/{messageId} {
+          allow get, list, create: if isOwner(userId);
+        }
       }
 
       match /analysisResults/{analysisResultId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isOwner(userId) && request.resource.data.userId == userId;
-        allow delete: if isOwner(userId);
+        allow get, list, create, update, delete: if isOwner(userId);
       }
     }
   }
