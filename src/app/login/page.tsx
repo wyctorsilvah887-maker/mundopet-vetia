@@ -12,7 +12,8 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   GoogleAuthProvider, 
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   updateProfile 
 } from 'firebase/auth';
 import { Loader2, Mail, Lock, LogIn, Chrome, User, Upload, X } from 'lucide-react';
@@ -32,7 +33,29 @@ export default function LoginPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Redireciona se já estiver logado, mas apenas se não estivermos no meio de um cadastro
+  // Captura o resultado do redirecionamento do Google
+  useEffect(() => {
+    if (auth) {
+      getRedirectResult(auth)
+        .then((result) => {
+          if (result) {
+            toast({ title: "Bem-vindo!", description: "Login com Google realizado com sucesso." });
+          }
+        })
+        .catch((error: any) => {
+          if (error.code !== 'auth/redirect-cancelled-by-user') {
+            toast({
+              variant: "destructive",
+              title: "Erro no Google Login",
+              description: error.message,
+            });
+          }
+          setIsLoading(false);
+        });
+    }
+  }, [auth, toast]);
+
+  // Redireciona se já estiver logado
   useEffect(() => {
     if (user && !isLoading) {
       router.push('/');
@@ -66,7 +89,6 @@ export default function LoginPage() {
     try {
       if (isSignUp) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        // Aguarda a atualização do perfil antes de permitir o redirecionamento
         await updateProfile(userCredential.user, {
           displayName: displayName || email.split('@')[0],
           photoURL: photoURL || `https://picsum.photos/seed/${userCredential.user.uid}/200/200`
@@ -76,7 +98,6 @@ export default function LoginPage() {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Bem-vindo de volta!", description: "Login realizado com sucesso." });
       }
-      // O useEffect cuidará do push('/')
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -91,12 +112,12 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     setIsLoading(true);
     try {
-      await signInWithPopup(auth, provider);
-      toast({ title: "Sucesso!", description: "Login com Google realizado." });
+      // Usando Redirect em vez de Popup para evitar erros de frame/proxy
+      await signInWithRedirect(auth, provider);
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro no Google Login",
+        title: "Erro ao iniciar Google Login",
         description: error.message,
       });
       setIsLoading(false);
