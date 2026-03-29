@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -22,6 +23,11 @@
         "displayName": {
           "type": "string",
           "description": "The user's preferred display name for the application."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "The URL of the user's profile picture.",
+          "format": "uri"
         },
         "createdAt": {
           "type": "string",
@@ -92,7 +98,7 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "google"
     ]
   },
   "firestore": {
@@ -134,6 +140,6 @@
         }
       }
     ],
-    "reasoning": "The recommended Firestore structure is designed with a strong emphasis on Authorization Independence and supporting Query-as-a-Principal (QAP) principles, critical for secure and scalable applications. \n\n1.  **User Profiles (`/users/{userId}`):** User profiles are stored in a top-level collection named `users`. Each document's ID (`userId`) directly corresponds to the authenticated user's Firebase Authentication UID (`request.auth.uid`). This path-based ownership is the most secure and straightforward method for private user data, ensuring that a user can only access their own profile. Authorization is independent because the `userId` is part of the document's direct path, making `get()` calls to other documents unnecessary for ownership verification.\n\n2.  **Analysis Results (`/users/{userId}/analysisResults/{analysisResultId}`):** Analysis results are stored as a subcollection under the respective user's profile. This hierarchical structure maintains a clear ownership chain. Crucially, each `AnalysisResult` document explicitly includes a `userId` field, which matches the `userId` in its parent path. This is a direct application of the **Authorization Independence** mandate: the necessary authorization context (`userId`) is denormalized and present within *every* `AnalysisResult` document. This eliminates the need for security rules to perform `get()` operations on the parent `UserProfile` document to verify ownership, thereby preventing broken atomic operations (transactions/batches) and simplifying rule debugging.\n\n**How Authorization Independence is Achieved:**\n*   **For UserProfile:** Access is granted solely based on matching `request.auth.uid` with the `{userId}` wildcard in the path `/users/{userId}`. No dependencies on other documents or `get()` calls are required.\n*   **For AnalysisResult:** Access is granted by matching `request.auth.uid` with the `{userId}` wildcard in the path `/users/{userId}/analysisResults/{analysisResultId}`. The `AnalysisResult` document also redundantly stores `userId` within its fields. This means the security rules can evaluate access using only the request context and the document itself, without needing to fetch the parent `UserProfile` document. This denormalization guarantees that authorization checks are self-contained for each document.\n\n**How QAPs (Query as a Principal) are Supported:**\n*   **For UserProfile:** When a user attempts to read their profile, the rule `allow read, write: if request.auth.uid == userId;` ensures that any `get` or `list` operation on `/users/{userId}` can only succeed if `userId` matches the authenticated user. A query to `/users` would typically be denied, preventing unauthorized listing of all user profiles and adhering to QAP by implicitly filtering results based on the principal's identity.\n*   **For AnalysisResult:** The structure `/users/{userId}/analysisResults/{analysisResultId}` inherently supports QAPs. When a user queries their analysis results (e.g., `db.collection('users').doc(request.auth.uid).collection('analysisResults').get()`), the security rule `allow read, write: if request.auth.uid == userId;` ensures that only documents within *that specific user's subcollection* are accessible. This prevents users from querying or listing analysis results belonging to other users, as they would be implicitly denied by the path-based authorization. The structure effectively 'filters' queries at the security rule layer, ensuring that only data the authenticated user is authorized to see is returned, upholding the QAP principle."
+    "reasoning": "The recommended Firestore structure is designed with a strong emphasis on Authorization Independence and supporting Query-as-a-Principal (QAP) principles, critical for secure and scalable applications."
   }
 }

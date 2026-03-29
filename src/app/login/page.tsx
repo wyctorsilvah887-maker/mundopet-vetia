@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -12,14 +13,17 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   GoogleAuthProvider, 
-  signInWithPopup 
+  signInWithPopup,
+  updateProfile 
 } from 'firebase/auth';
-import { Loader2, Mail, Lock, LogIn, Chrome } from 'lucide-react';
+import { Loader2, Mail, Lock, LogIn, Chrome, User, ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [photoURL, setPhotoURL] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const auth = useAuth();
@@ -40,7 +44,11 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, {
+          displayName: displayName || email.split('@')[0],
+          photoURL: photoURL || `https://picsum.photos/seed/${userCredential.user.uid}/200/200`
+        });
         toast({ title: "Conta criada!", description: "Bem-vindo ao Vet AI." });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
@@ -79,7 +87,7 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen bg-black">
       <Navbar />
-      <main className="flex-1 flex items-center justify-center p-4">
+      <main className="flex-1 flex items-center justify-center p-4 py-12">
         <Card className="w-full max-w-md border-2 border-border/50 bg-card shadow-2xl">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-3xl font-headline font-bold text-primary">
@@ -93,6 +101,39 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={handleEmailAuth} className="space-y-4">
+              {isSignUp && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="displayName">Nome Completo</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="displayName" 
+                        type="text" 
+                        placeholder="Seu nome" 
+                        className="pl-10 bg-secondary/20"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        required={isSignUp}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="photoURL">URL da Foto de Perfil</Label>
+                    <div className="relative">
+                      <ImageIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="photoURL" 
+                        type="url" 
+                        placeholder="https://exemplo.com/suafoto.jpg" 
+                        className="pl-10 bg-secondary/20"
+                        value={photoURL}
+                        onChange={(e) => setPhotoURL(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <div className="relative">
