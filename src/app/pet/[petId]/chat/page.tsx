@@ -44,7 +44,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     }
   }, [user, isUserLoading, router]);
 
-  // Trigger de saudação inicial automática
+  // Trigger de saudação inicial automática com correção de execução única
   useEffect(() => {
     if (pet && messages.length === 0 && !isSending && !hasInitiated) {
       setHasInitiated(true);
@@ -61,7 +61,9 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
             message: "SAUDACAO_INICIAL_TRIGGER",
             history: [],
           });
-          setMessages([{ role: 'model', content: response }]);
+          if (response) {
+            setMessages([{ role: 'model', content: response }]);
+          }
         } catch (error) {
           console.error("Erro na saudação inicial:", error);
         } finally {
@@ -99,17 +101,19 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
         history: messages,
       });
 
-      setMessages(prev => [...prev, { role: 'model', content: response }]);
+      if (response) {
+        setMessages(prev => [...prev, { role: 'model', content: response }]);
 
-      if (user && firestore) {
-        const analysisResultsRef = collection(firestore, 'users', user.uid, 'analysisResults');
-        addDocumentNonBlocking(analysisResultsRef, {
-          userId: user.uid,
-          analysisType: 'text',
-          inputDescription: `Chat sobre ${pet.name}: ${userMessage}`,
-          aiResponse: response,
-          createdAt: new Date().toISOString(),
-        });
+        if (user && firestore) {
+          const analysisResultsRef = collection(firestore, 'users', user.uid, 'analysisResults');
+          addDocumentNonBlocking(analysisResultsRef, {
+            userId: user.uid,
+            analysisType: 'text',
+            inputDescription: `Chat sobre ${pet.name}: ${userMessage}`,
+            aiResponse: response,
+            createdAt: new Date().toISOString(),
+          });
+        }
       }
     } catch (error) {
       console.error("Erro no chat:", error);
@@ -133,7 +137,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       <Navbar />
       
       <main className="flex-1 flex flex-col container mx-auto px-4 py-4 max-w-4xl overflow-hidden">
-        {/* Cabeçalho do Chat */}
         <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-muted-foreground hover:text-primary">
@@ -158,7 +161,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           </div>
         </div>
 
-        {/* Área de Mensagens */}
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-6 py-4">
             {messages.map((msg, i) => (
@@ -193,7 +195,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           </div>
         </ScrollArea>
 
-        {/* Input de Mensagem */}
         <form onSubmit={handleSend} className="mt-4 pb-4">
           <div className="relative group">
             <div className="absolute inset-0 bg-primary/20 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />

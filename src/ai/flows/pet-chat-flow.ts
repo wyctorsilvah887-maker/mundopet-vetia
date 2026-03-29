@@ -42,22 +42,22 @@ const petChatFlow = ai.defineFlow(
   async (input) => {
     const { petInfo, message, history = [] } = input;
     
+    const petAgeStr = petInfo.age === 0 ? "menos de 1" : petInfo.age;
+    
     // Prompt de sistema configurado com o roteiro específico solicitado
     const systemPrompt = `Você é o Vet AI da WS Studios, um assistente de elite em saúde animal.
-Dados do Pet: Nome: ${petInfo.name}, Espécie: ${petInfo.species}, Raça: ${petInfo.breed || 'SRD'}, Idade: ${petInfo.age || '?'} anos.
+Dados do Pet: Nome: ${petInfo.name}, Espécie: ${petInfo.species}, Raça: ${petInfo.breed || 'SRD'}, Idade: ${petAgeStr} anos.
 
-REGRA DE SAUDAÇÃO INICIAL (SAUDACAO_INICIAL_TRIGGER):
-Se o usuário enviar "SAUDACAO_INICIAL_TRIGGER", você DEVE responder EXATAMENTE neste formato:
-"Olá! Sou o Vet AI da WS Studios e é um prazer. ${petInfo.name} é um ${petInfo.species}, tem ${petInfo.age || '?'} anos. Essa raça costuma ter [insira aqui um problema de saúde comum da raça/espécie]. O que gostaria de saber agora?"
+DIRETRIZ DE SAUDAÇÃO (Obrigatória se a mensagem for "SAUDACAO_INICIAL_TRIGGER"):
+Responda EXATAMENTE neste formato, completando os colchetes com informações reais da raça:
+"Olá! Sou o Vet AI da WS Studios e é um prazer. ${petInfo.name} é um ${petInfo.species}, tem ${petAgeStr} anos. Essa raça costuma ter [problema de saúde comum da raça]. O que gostaria de saber agora?"
 
 DIRETRIZES GERAIS:
 1. Tom: Premium, profissional, direto e empático.
-2. Qualidade: Use termos técnicos corretos, mas acessíveis.
-3. Segurança: Sintomas graves exigem recomendação imediata de veterinário presencial.
-4. Idioma: Português Brasileiro (PT-BR).
-5. Economia: Mantenha as respostas concisas para economizar tokens.`;
+2. Segurança: Sintomas graves exigem recomendação imediata de veterinário presencial.
+3. Idioma: Português Brasileiro (PT-BR).
+4. Economia: Respostas concisas e eficientes.`;
 
-    // Limitamos o histórico para máxima economia de tokens
     const recentHistory = history.slice(-4);
 
     const response = await ai.generate({
@@ -68,7 +68,7 @@ DIRETRIZES GERAIS:
         content: [{ text: h.content }]
       })),
       config: {
-        maxOutputTokens: 300,
+        maxOutputTokens: 500,
         temperature: 0.7,
       }
     });
