@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -21,7 +22,10 @@ export default function Home() {
   if (isUserLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 animate-spin text-primary" />
+          <p className="text-primary font-bold animate-pulse">Iniciando Vet AI...</p>
+        </div>
       </div>
     );
   }
@@ -37,13 +41,6 @@ export default function Home() {
           <div className="inline-block px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-bold tracking-widest uppercase mb-4 animate-pulse">
             Inteligência Artificial de Elite
           </div>
-          <h1 className="text-5xl md:text-7xl font-headline font-extrabold tracking-tight leading-tight">
-            Saúde Animal em um <br />
-            <span className="premium-emerald-text">Novo Patamar</span>
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Diagnósticos inteligentes e nutrição de precisão para quem não abre mão do melhor para o seu pet.
-          </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
