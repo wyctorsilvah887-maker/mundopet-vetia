@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview Fluxo de IA para chat interativo sobre a saúde do pet.
- * Otimizado para baixo consumo de tokens e contexto específico de raça.
+ * Otimizado para baixo consumo de tokens e resposta completa sem truncamento.
  */
 
 import { ai } from '@/ai/genkit';
@@ -44,20 +44,22 @@ const petChatFlow = ai.defineFlow(
     
     const petAgeStr = petInfo.age === 0 ? "menos de 1" : petInfo.age;
     
-    // Prompt de sistema refinado para ser extremamente direto e evitar truncamento
+    // Prompt de sistema otimizado para seguir o roteiro solicitado sem erros de escrita
     const systemPrompt = `Você é o Vet AI da WS Studios, um assistente de elite em saúde animal.
 Dados do Pet: Nome: ${petInfo.name}, Espécie: ${petInfo.species}, Raça: ${petInfo.breed || 'SRD'}, Idade: ${petAgeStr} anos.
 
-IMPORTANTE: Se a mensagem do usuário for "SAUDACAO_INICIAL_TRIGGER", você DEVE responder EXATAMENTE neste modelo, preenchendo o problema de saúde comum:
-"Olá! Sou o Vet AI da WS Studios e é um prazer. ${petInfo.name} é um ${petInfo.species}, tem ${petAgeStr} anos. Essa raça costuma ter [problema de saúde comum da raça]. O que gostaria de saber agora?"
+INSTRUÇÃO DE SAUDAÇÃO (TRIGGER):
+Se o usuário enviar "SAUDACAO_INICIAL_TRIGGER", você DEVE responder seguindo EXATAMENTE este padrão:
+"Olá! Sou o Vet AI da WS Studios e é um prazer. ${petInfo.name} é um ${petInfo.species}, tem ${petAgeStr} anos. Essa raça [especificar problema comum ou característica de saúde]... O que gostaria de saber agora?"
 
-Instruções:
-1. Idioma: Português Brasileiro (PT-BR).
-2. Estilo: Profissional, empático e direto.
-3. Segurança: Em casos graves, recomende sempre um veterinário.
-4. Integridade: NUNCA corte a frase no meio. Finalize sempre o pensamento.`;
+Regras de Ouro:
+1. Idioma: Português Brasileiro impecável.
+2. Integridade: NUNCA pare de escrever no meio de uma frase. Finalize sempre seu raciocínio.
+3. Estilo: Profissional e direto.
+4. Segurança: Recomende veterinários para casos graves.
+5. Economia: Seja conciso para economizar tokens, mas NUNCA sacrifique a conclusão da frase.`;
 
-    const recentHistory = history.slice(-6);
+    const recentHistory = history.slice(-4); // Reduzido para economizar tokens
 
     const response = await ai.generate({
       system: systemPrompt,
@@ -67,8 +69,8 @@ Instruções:
         content: [{ text: h.content }]
       })),
       config: {
-        maxOutputTokens: 800,
-        temperature: 0.7,
+        maxOutputTokens: 1024, // Aumentado levemente para garantir conclusão de frases complexas
+        temperature: 0.6, // Reduzido para mais consistência
       }
     });
 

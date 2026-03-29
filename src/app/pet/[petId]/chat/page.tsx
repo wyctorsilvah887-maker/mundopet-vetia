@@ -170,7 +170,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary text-black' : 'bg-white/10 text-primary border border-white/10'}`}>
                     {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                   </div>
-                  <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                  <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${
                     msg.role === 'user' 
                     ? 'bg-primary/10 text-white border border-primary/20 rounded-tr-none' 
                     : 'bg-white/5 text-muted-foreground border border-white/10 rounded-tl-none'
