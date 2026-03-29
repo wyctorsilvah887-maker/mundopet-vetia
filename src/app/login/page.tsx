@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -16,8 +16,9 @@ import {
   signInWithPopup,
   updateProfile 
 } from 'firebase/auth';
-import { Loader2, Mail, Lock, LogIn, Chrome, User, ImageIcon } from 'lucide-react';
+import { Loader2, Mail, Lock, LogIn, Chrome, User, ImageIcon, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -30,12 +31,32 @@ export default function LoginPage() {
   const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
       router.push('/');
     }
   }, [user, router]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) { // Limite simples de 1MB para protótipo
+        toast({
+          variant: "destructive",
+          title: "Arquivo muito grande",
+          description: "Por favor, escolha uma imagem menor que 1MB.",
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoURL(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,16 +140,39 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="photoURL">URL da Foto de Perfil</Label>
-                    <div className="relative">
-                      <ImageIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="photoURL" 
-                        type="url" 
-                        placeholder="https://exemplo.com/suafoto.jpg" 
-                        className="pl-10 bg-secondary/20"
-                        value={photoURL}
-                        onChange={(e) => setPhotoURL(e.target.value)}
+                    <Label>Foto de Perfil</Label>
+                    <div className="flex flex-col items-center gap-4">
+                      {photoURL ? (
+                        <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-primary group">
+                          <Image 
+                            src={photoURL} 
+                            alt="Preview" 
+                            fill 
+                            className="object-cover"
+                          />
+                          <button 
+                            type="button"
+                            onClick={() => setPhotoURL('')}
+                            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-6 h-6 text-white" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div 
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-24 h-24 rounded-full bg-secondary/20 border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:bg-secondary/30 transition-colors"
+                        >
+                          <Upload className="w-6 h-6 text-muted-foreground mb-1" />
+                          <span className="text-[10px] text-muted-foreground">Upload</span>
+                        </div>
+                      )}
+                      <input 
+                        type="file" 
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="hidden"
                       />
                     </div>
                   </div>
