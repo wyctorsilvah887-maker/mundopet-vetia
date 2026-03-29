@@ -57,7 +57,6 @@ export default function LoginPage() {
             setDocumentNonBlocking(userRef, userProfile, { merge: true });
             toast({ title: "Bem-vindo!", description: "Login com Google realizado com sucesso." });
           }
-          setIsLoading(false);
         })
         .catch((error: any) => {
           if (error.code !== 'auth/redirect-cancelled-by-user') {
@@ -67,6 +66,8 @@ export default function LoginPage() {
               description: error.message,
             });
           }
+        })
+        .finally(() => {
           setIsLoading(false);
         });
     }
@@ -111,18 +112,17 @@ export default function LoginPage() {
         
         let finalPhotoURL = `https://picsum.photos/seed/${uid}/200/200`;
 
-        // Upload da foto para o Storage se houver arquivo selecionado
         if (photoFile && storage) {
           try {
             const storageRef = ref(storage, `users/${uid}/profile.jpg`);
             const snapshot = await uploadBytes(storageRef, photoFile);
             finalPhotoURL = await getDownloadURL(snapshot.ref);
           } catch (uploadError: any) {
-            console.error("Erro no upload da foto:", uploadError);
+            console.error("Erro no upload da foto (CORS ou permissão):", uploadError);
             toast({
               variant: "destructive",
-              title: "Aviso",
-              description: "Erro ao subir foto. O cadastro continuará com foto padrão.",
+              title: "Aviso de Upload",
+              description: "Não foi possível subir a foto. Continuando com foto padrão.",
             });
           }
         }
@@ -157,6 +157,7 @@ export default function LoginPage() {
         title: "Erro na autenticação",
         description: error.message || "Ocorreu um problema inesperado.",
       });
+    } finally {
       setIsLoading(false);
     }
   };
