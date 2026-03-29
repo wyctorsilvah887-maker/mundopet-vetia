@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -8,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, useUser, useFirestore, useFirebase, setDocumentNonBlocking } from '@/firebase';
+import { useAuth, useUser, useFirebase, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
@@ -56,14 +55,14 @@ export default function LoginPage() {
             };
             
             setDocumentNonBlocking(userRef, userProfile, { merge: true });
-            toast({ title: "Bem-vindo!", description: "Login com Google realizado com sucesso." });
+            toast({ title: "Bem-vindo!", description: "Acesso autorizado com sucesso." });
           }
         })
         .catch((error: any) => {
           if (error.code !== 'auth/redirect-cancelled-by-user') {
             toast({
               variant: "destructive",
-              title: "Erro no Google Login",
+              title: "Erro de Acesso",
               description: error.message,
             });
           }
@@ -75,7 +74,6 @@ export default function LoginPage() {
   }, [auth, firestore, toast]);
 
   useEffect(() => {
-    // Redireciona se o usuário estiver logado e não estivermos em processo de carregamento de auth inicial
     if (user && !isUserLoading) {
       router.push('/');
     }
@@ -87,8 +85,8 @@ export default function LoginPage() {
       if (file.size > 2 * 1024 * 1024) { 
         toast({
           variant: "destructive",
-          title: "Arquivo muito grande",
-          description: "Por favor, escolha uma imagem menor que 2MB.",
+          title: "Arquivo Excedido",
+          description: "O limite para imagens de perfil é de 2MB.",
         });
         return;
       }
@@ -120,12 +118,7 @@ export default function LoginPage() {
             const snapshot = await uploadBytes(storageRef, photoFile);
             finalPhotoURL = await getDownloadURL(snapshot.ref);
           } catch (uploadError: any) {
-            console.error("Erro no upload da foto:", uploadError);
-            toast({
-              variant: "destructive",
-              title: "Aviso de Upload",
-              description: "Não foi possível subir a foto. Continuando com foto padrão.",
-            });
+            console.warn("Upload falhou, usando padrão:", uploadError);
           }
         }
         
@@ -148,17 +141,16 @@ export default function LoginPage() {
           setDocumentNonBlocking(userRef, userProfile, { merge: true });
         }
 
-        toast({ title: "Conta criada!", description: "Bem-vindo ao Vet AI." });
+        toast({ title: "Bem-vindo!", description: "Sua conta premium foi criada." });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
-        toast({ title: "Bem-vindo de volta!", description: "Login realizado com sucesso." });
+        toast({ title: "Acesso Liberado", description: "Bom te ver novamente." });
       }
-      // O useEffect de redirecionamento cuidará do resto
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro na autenticação",
-        description: error.message || "Ocorreu um problema inesperado.",
+        title: "Falha na Autenticação",
+        description: error.message,
       });
     } finally {
       setIsLoading(false);
@@ -173,7 +165,7 @@ export default function LoginPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao iniciar Google Login",
+        title: "Erro Google Login",
         description: error.message,
       });
       setIsLoading(false);
@@ -183,7 +175,7 @@ export default function LoginPage() {
   if (isUserLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
       </div>
     );
   }
@@ -192,30 +184,32 @@ export default function LoginPage() {
     <div className="flex flex-col min-h-screen bg-black">
       <Navbar />
       <main className="flex-1 flex items-center justify-center p-4 py-12">
-        <Card className="w-full max-w-md border-2 border-border/50 bg-card shadow-2xl">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-3xl font-headline font-bold text-primary">
-              {isSignUp ? 'Criar Conta' : 'Acessar Vet AI'}
+        <div className="absolute inset-0 bg-primary/5 blur-[120px] pointer-events-none" />
+        <Card className="w-full max-w-md border border-white/10 bg-black/40 backdrop-blur-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden">
+          <div className="h-1.5 w-full bg-gradient-to-r from-primary via-accent to-primary" />
+          <CardHeader className="space-y-2 text-center pt-8">
+            <CardTitle className="text-4xl font-headline font-bold text-white tracking-tighter">
+              {isSignUp ? 'Membro Vet AI' : 'Acesse o Vet AI'}
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardDescription className="text-muted-foreground/80 text-lg">
               {isSignUp 
-                ? 'Comece a cuidar melhor do seu pet hoje mesmo' 
-                : 'Entre para acessar suas análises e histórico'}
+                ? 'Sua jornada premium começa aqui' 
+                : 'Entre para retomar suas análises'}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={handleEmailAuth} className="space-y-4">
+          <CardContent className="space-y-6">
+            <form onSubmit={handleEmailAuth} className="space-y-5">
               {isSignUp && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="displayName">Nome Completo</Label>
+                    <Label htmlFor="displayName" className="text-xs uppercase tracking-widest text-muted-foreground ml-1">Nome Completo</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <User className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground" />
                       <Input 
                         id="displayName" 
                         type="text" 
-                        placeholder="Seu nome" 
-                        className="pl-10 bg-secondary/20"
+                        placeholder="Ex: Carlos Silva" 
+                        className="pl-11 h-12 bg-white/5 border-white/10 focus:border-primary/50 transition-all rounded-xl"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
                         required={isSignUp}
@@ -223,10 +217,10 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Foto de Perfil</Label>
+                    <Label className="text-xs uppercase tracking-widest text-muted-foreground ml-1">Foto de Perfil</Label>
                     <div className="flex flex-col items-center gap-4">
                       {photoPreview ? (
-                        <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-primary group">
+                        <div className="relative w-28 h-28 rounded-3xl overflow-hidden border-2 border-primary group shadow-2xl">
                           <Image 
                             src={photoPreview} 
                             alt="Preview" 
@@ -239,18 +233,18 @@ export default function LoginPage() {
                               setPhotoPreview('');
                               setPhotoFile(null);
                             }}
-                            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            <X className="w-6 h-6 text-white" />
+                            <X className="w-7 h-7 text-white" />
                           </button>
                         </div>
                       ) : (
                         <div 
                           onClick={() => fileInputRef.current?.click()}
-                          className="w-24 h-24 rounded-full bg-secondary/20 border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:bg-secondary/30 transition-colors"
+                          className="w-28 h-28 rounded-3xl bg-white/5 border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 hover:border-primary/50 transition-all group"
                         >
-                          <Upload className="w-6 h-6 text-muted-foreground mb-1" />
-                          <span className="text-[10px] text-muted-foreground">Upload</span>
+                          <Upload className="w-7 h-7 text-muted-foreground group-hover:text-primary mb-2 transition-colors" />
+                          <span className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Subir Foto</span>
                         </div>
                       )}
                       <input 
@@ -265,14 +259,14 @@ export default function LoginPage() {
                 </>
               )}
               <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
+                <Label htmlFor="email" className="text-xs uppercase tracking-widest text-muted-foreground ml-1">E-mail Corporativo</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground" />
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="exemplo@email.com" 
-                    className="pl-10 bg-secondary/20"
+                    placeholder="email@dominio.com" 
+                    className="pl-11 h-12 bg-white/5 border-white/10 focus:border-primary/50 transition-all rounded-xl"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -280,53 +274,53 @@ export default function LoginPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password" title="Senha" className="text-xs uppercase tracking-widest text-muted-foreground ml-1">Senha de Acesso</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground" />
                   <Input 
                     id="password" 
                     type="password" 
                     placeholder="••••••••" 
-                    className="pl-10 bg-secondary/20"
+                    className="pl-11 h-12 bg-white/5 border-white/10 focus:border-primary/50 transition-all rounded-xl"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full h-11 text-lg font-bold bg-primary hover:bg-primary/90" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : (isSignUp ? 'Cadastrar' : 'Entrar')}
+              <Button type="submit" className="w-full h-14 text-lg font-bold bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/20 transition-all active:scale-95 rounded-xl" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : (isSignUp ? 'Criar Minha Conta' : 'Acessar Plataforma')}
               </Button>
             </form>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
+                <span className="w-full border-t border-white/10" />
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Ou continue com</span>
+              <div className="relative flex justify-center text-xs uppercase tracking-widest">
+                <span className="bg-black/40 px-3 text-muted-foreground/60 font-bold">Ou autentique com</span>
               </div>
             </div>
 
             <Button 
               variant="outline" 
-              className="w-full h-11 border-2 border-border/50 hover:bg-secondary/30" 
+              className="w-full h-14 border-white/10 bg-white/5 hover:bg-white/10 hover:border-primary/40 transition-all rounded-xl" 
               onClick={handleGoogleSignIn}
               disabled={isLoading}
             >
-              <Chrome className="mr-2 h-5 w-5 text-primary" />
-              Google
+              <Chrome className="mr-3 h-5 w-5 text-primary" />
+              <span className="font-bold">Google Auth</span>
             </Button>
           </CardContent>
-          <CardFooter className="flex flex-col gap-2">
+          <CardFooter className="flex flex-col gap-4 pb-8">
             <button 
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setIsLoading(false);
               }}
-              className="text-sm text-primary hover:underline transition-all"
+              className="text-sm text-primary hover:text-white transition-all font-bold tracking-wide"
             >
-              {isSignUp ? 'Já tem uma conta? Entre aqui' : 'Não tem conta? Cadastre-se grátis'}
+              {isSignUp ? 'Já possui conta? Acessar aqui' : 'Novo por aqui? Solicitar acesso'}
             </button>
           </CardFooter>
         </Card>

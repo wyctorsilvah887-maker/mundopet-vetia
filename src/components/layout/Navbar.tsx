@@ -35,40 +35,40 @@ export function Navbar() {
   const displayName = userProfile?.displayName || user?.displayName || 'Usuário';
 
   return (
-    <header className="border-b bg-card/50 backdrop-blur-md sticky top-0 z-50">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between relative">
+    <header className="border-b border-white/5 bg-black/60 backdrop-blur-xl sticky top-0 z-50">
+      <div className="container mx-auto px-4 h-20 flex items-center justify-between relative">
         {/* Lado Esquerdo: Nome e Avatar */}
-        <div className="flex-1 flex items-center gap-3">
+        <div className="flex-1 flex items-center gap-4">
           {!isUserLoading && user && (
             <>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full border-2 border-primary/20 hover:border-primary/50 transition-colors">
-                    <Avatar className="h-9 w-9">
+                  <Button variant="ghost" className="relative h-11 w-11 rounded-full border-2 border-primary/30 hover:border-primary transition-all duration-300 p-0 overflow-hidden">
+                    <Avatar className="h-full w-full">
                       <AvatarImage src={userProfile?.photoURL || user.photoURL || ""} alt={displayName} />
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        <User className="h-5 w-5" />
+                      <AvatarFallback className="bg-secondary text-primary">
+                        <User className="h-6 w-6" />
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="start" forceMount>
+                <DropdownMenuContent className="w-56 mt-2 bg-card border-white/10" align="start" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-bold leading-none">{displayName}</p>
+                      <p className="text-sm font-bold leading-none premium-gold-text">{displayName}</p>
                       <p className="text-xs leading-none text-muted-foreground">
                         {user.email}
                       </p>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="bg-white/5" />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Sair</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <span className="hidden md:inline-block text-sm font-medium text-white">
+              <span className="hidden md:inline-block text-sm premium-gold-text tracking-wide">
                 {displayName}
               </span>
             </>
@@ -76,20 +76,22 @@ export function Navbar() {
         </div>
 
         {/* Centro: Logotipo */}
-        <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 group">
-          <div className="bg-primary p-2 rounded-xl text-primary-foreground group-hover:scale-110 transition-transform">
-            <PawPrint className="w-6 h-6" />
+        <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 group">
+          <div className="bg-gradient-to-br from-primary to-accent p-2.5 rounded-2xl text-black group-hover:scale-110 transition-transform duration-500 shadow-[0_0_20px_rgba(253,185,49,0.3)]">
+            <PawPrint className="w-7 h-7" />
           </div>
-          <span className="font-headline font-bold text-xl tracking-tight text-primary">Vet AI</span>
+          <span className="font-headline font-bold text-2xl tracking-tighter text-white group-hover:text-primary transition-colors">
+            Vet<span className="text-primary">AI</span>
+          </span>
         </Link>
 
         {/* Lado Direito: Login (se não autenticado) */}
         <div className="flex-1 flex justify-end items-center gap-3">
           {!isUserLoading && !user && (
             <Link href="/login">
-              <Button variant="ghost" size="sm" className="gap-2 text-primary hover:text-primary hover:bg-primary/10">
+              <Button variant="ghost" className="gap-2 text-primary hover:text-white hover:bg-white/5 font-bold transition-all">
                 <LogIn className="h-4 w-4" />
-                <span className="hidden sm:inline">Entrar</span>
+                <span>Entrar</span>
               </Button>
             </Link>
           )}
