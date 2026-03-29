@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -8,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useAuth, useUser, useFirestore, useFirebase, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -26,12 +26,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [photoURL, setPhotoURL] = useState('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
+  const { firestore, storage } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,24 +81,21 @@ export default function LoginPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 500 * 1024) { 
+      if (file.size > 2 * 1024 * 1024) { 
         toast({
           variant: "destructive",
           title: "Arquivo muito grande",
-          description: "Por favor, escolha uma imagem menor que 500KB para garantir a performance.",
+          description: "Por favor, escolha uma imagem menor que 2MB.",
         });
         return;
       }
+      setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        setPhotoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
-  };
-
-  const setImagePreview = (base64: string) => {
-    setPhotoURL(base64);
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -109,25 +107,42 @@ export default function LoginPage() {
       if (isSignUp) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const finalDisplayName = displayName || email.split('@')[0];
+        const uid = userCredential.user.uid;
         
-        // Firebase Auth photoURL tem limite de caracteres (não aceita Base64 longo)
-        // Por isso, salvamos apenas no Firestore e deixamos o Auth simplificado
+        let finalPhotoURL = `https://picsum.photos/seed/${uid}/200/200`;
+
+        // Upload da foto para o Storage se houver arquivo selecionado
+        if (photoFile && storage) {
+          try {
+            const storageRef = ref(storage, `users/${uid}/profile.jpg`);
+            const snapshot = await uploadBytes(storageRef, photoFile);
+            finalPhotoURL = await getDownloadURL(snapshot.ref);
+          } catch (uploadError: any) {
+            console.error("Erro no upload da foto:", uploadError);
+            toast({
+              variant: "destructive",
+              title: "Aviso",
+              description: "Erro ao subir foto. O cadastro continuará com foto padrão.",
+            });
+          }
+        }
+        
         await updateProfile(userCredential.user, {
-          displayName: finalDisplayName
+          displayName: finalDisplayName,
+          photoURL: finalPhotoURL
         });
 
         if (firestore) {
-          const userRef = doc(firestore, 'users', userCredential.user.uid);
+          const userRef = doc(firestore, 'users', uid);
           const userProfile = {
-            id: userCredential.user.uid,
-            externalAuthUserId: userCredential.user.uid,
+            id: uid,
+            externalAuthUserId: uid,
             email: userCredential.user.email,
             displayName: finalDisplayName,
-            photoURL: photoURL || `https://picsum.photos/seed/${userCredential.user.uid}/200/200`,
+            photoURL: finalPhotoURL,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           };
-          // Usamos setDocumentNonBlocking para salvar os dados no Firestore
           setDocumentNonBlocking(userRef, userProfile, { merge: true });
         }
 
@@ -206,17 +221,20 @@ export default function LoginPage() {
                   <div className="space-y-2">
                     <Label>Foto de Perfil</Label>
                     <div className="flex flex-col items-center gap-4">
-                      {photoURL ? (
+                      {photoPreview ? (
                         <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-primary group">
                           <Image 
-                            src={photoURL} 
+                            src={photoPreview} 
                             alt="Preview" 
                             fill 
                             className="object-cover"
                           />
                           <button 
                             type="button"
-                            onClick={() => setPhotoURL('')}
+                            onClick={() => {
+                              setPhotoPreview('');
+                              setPhotoFile(null);
+                            }}
                             className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <X className="w-6 h-6 text-white" />
