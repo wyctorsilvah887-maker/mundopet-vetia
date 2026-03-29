@@ -4,8 +4,9 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
-import { ShieldCheck, Zap, HeartPulse, Loader2 } from 'lucide-react';
+import { ShieldCheck, Zap, HeartPulse, Loader2, PlusCircle, Dog } from 'lucide-react';
 import { useUser } from '@/firebase';
+import Link from 'next/link';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -39,10 +40,36 @@ export default function Home() {
           <div className="inline-block px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-bold tracking-widest uppercase mb-4 animate-pulse">
             Inteligência Artificial de Elite
           </div>
-          {/* Textos de hero removidos conforme solicitação */}
         </div>
 
-        {/* Card de Visão Computacional removido conforme solicitação */}
+        {/* Card de Cadastro de Pet */}
+        <section className="max-w-xl mx-auto mb-32">
+          <Link href="/cadastrar-pet">
+            <div className="group relative bg-white/5 border border-white/10 rounded-[2rem] p-10 hover:bg-white/10 transition-all duration-500 hover:border-primary/40 hover:-translate-y-2 cursor-pointer overflow-hidden shadow-2xl">
+              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Dog className="w-32 h-32 text-primary" />
+              </div>
+              
+              <div className="flex items-center gap-4 mb-6">
+                <div className="bg-primary/20 p-4 rounded-2xl group-hover:scale-110 transition-transform duration-500">
+                  <PlusCircle className="w-8 h-8 text-primary" />
+                </div>
+                <h2 className="text-3xl font-headline font-bold text-white tracking-tight">
+                  Cadastrar <span className="premium-emerald-text">Pet</span>
+                </h2>
+              </div>
+              
+              <p className="text-muted-foreground text-lg leading-relaxed mb-8 max-w-md">
+                Crie um perfil exclusivo para seu companheiro e tenha acesso a monitoramento de saúde personalizado por IA.
+              </p>
+              
+              <div className="flex items-center gap-2 text-primary font-bold tracking-wide group-hover:translate-x-2 transition-transform">
+                <span>INICIAR CADASTRO PREMIUM</span>
+                <PlusCircle className="w-4 h-4" />
+              </div>
+            </div>
+          </Link>
+        </section>
 
         <section className="mt-32 py-16 border-y border-white/5 text-center">
           <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">

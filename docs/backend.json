@@ -48,6 +48,48 @@
         "createdAt"
       ]
     },
+    "Pet": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Pet",
+      "type": "object",
+      "description": "Stores information about a user's pet.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Pet."
+        },
+        "userId": {
+          "type": "string",
+          "description": "ID of the user who owns the pet."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the pet."
+        },
+        "species": {
+          "type": "string",
+          "description": "Species of the pet (e.g., dog, cat)."
+        },
+        "breed": {
+          "type": "string",
+          "description": "Breed of the pet."
+        },
+        "age": {
+          "type": "number",
+          "description": "Age of the pet in years."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Photo URL of the pet.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "userId", "name", "species", "createdAt"]
+    },
     "AnalysisResult": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "AnalysisResult",
@@ -110,11 +152,31 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores core information about a user profile. The document ID (`userId`) must match the Firebase Authentication UID (`request.auth.uid`) for direct ownership. Includes standard user profile fields.",
+          "description": "Stores core information about a user profile.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier for the UserProfile, corresponding to the Firebase Authentication UID of the logged-in user."
+              "description": "The unique identifier for the UserProfile."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/pets/{petId}",
+        "definition": {
+          "entityName": "Pet",
+          "schema": {
+            "$ref": "#/backend/entities/Pet"
+          },
+          "description": "Stores information about a user's pet.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Owner ID."
+            },
+            {
+              "name": "petId",
+              "description": "Pet ID."
             }
           ]
         }
@@ -126,20 +188,20 @@
           "schema": {
             "$ref": "#/backend/entities/AnalysisResult"
           },
-          "description": "Stores the details and outcomes of an AI analysis performed by a user. This is a subcollection under a specific user's profile. Includes a denormalized 'userId' field for authorization independence, ensuring the document owner is explicit without needing parent lookups.",
+          "description": "Stores the details and outcomes of an AI analysis performed by a user.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the UserProfile who owns this analysis result, matching the parent collection's wildcard and the 'userId' field within the document."
+              "description": "Owner ID."
             },
             {
               "name": "analysisResultId",
-              "description": "The unique identifier for a specific analysis result."
+              "description": "Analysis ID."
             }
           ]
         }
       }
     ],
-    "reasoning": "The recommended Firestore structure is designed with a strong emphasis on Authorization Independence and supporting Query-as-a-Principal (QAP) principles, critical for secure and scalable applications."
+    "reasoning": "Standard hierarchical structure for user-owned data."
   }
 }
