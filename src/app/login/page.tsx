@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -29,7 +30,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const auth = useAuth();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
@@ -56,6 +57,7 @@ export default function LoginPage() {
             setDocumentNonBlocking(userRef, userProfile, { merge: true });
             toast({ title: "Bem-vindo!", description: "Login com Google realizado com sucesso." });
           }
+          setIsLoading(false);
         })
         .catch((error: any) => {
           if (error.code !== 'auth/redirect-cancelled-by-user') {
@@ -70,12 +72,12 @@ export default function LoginPage() {
     }
   }, [auth, firestore, toast]);
 
-  // Redireciona se já estiver logado
+  // Redireciona se já estiver logado (independente do loading local do botão)
   useEffect(() => {
-    if (user && !isLoading) {
+    if (user && !isUserLoading) {
       router.push('/');
     }
-  }, [user, isLoading, router]);
+  }, [user, isUserLoading, router]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -133,6 +135,7 @@ export default function LoginPage() {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Bem-vindo de volta!", description: "Login realizado com sucesso." });
       }
+      // O redirect será feito pelo useEffect monitorando 'user'
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -157,6 +160,14 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  if (isUserLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-black">
@@ -287,7 +298,10 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
             <button 
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setIsLoading(false);
+              }}
               className="text-sm text-primary hover:underline transition-all"
             >
               {isSignUp ? 'Já tem uma conta? Entre aqui' : 'Não tem conta? Cadastre-se grátis'}
