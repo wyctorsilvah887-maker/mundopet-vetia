@@ -68,7 +68,7 @@ DIRETRIZES DE OPERAÇÃO:
 4. Segurança: Casos graves exigem recomendação imediata de veterinário presencial.
 5. Ortografia: Revise mentalmente para garantir 0 erros de escrita.`;
 
-    // "Memória muito boa": Aumentamos para as últimas 10 mensagens (aprox. 5 turnos completos)
+    // "Memória muito boa": Mantemos as últimas 10 mensagens (aprox. 5 turnos completos)
     const recentHistory = history.slice(-10);
 
     const response = await ai.generate({
@@ -79,8 +79,8 @@ DIRETRIZES DE OPERAÇÃO:
         content: [{ text: h.content }]
       })),
       config: {
-        maxOutputTokens: 800,
-        temperature: 0.5, // Menor temperatura para maior precisão e menos alucinação
+        maxOutputTokens: 450, // Reduzido de 800 para 450 para maior economia de tokens
+        temperature: 0.4, // Reduzido levemente para respostas mais diretas
       }
     });
 
