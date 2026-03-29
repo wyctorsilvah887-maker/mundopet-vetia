@@ -9,9 +9,9 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@
 import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
 import { petChat } from '@/ai/flows/pet-chat-flow';
 import { analyzeImagePetHealth } from '@/ai/flows/analyze-image-pet-health-flow';
-import { Loader2, Send, ArrowLeft, Bot, User, Sparkles, Paperclip, Camera, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Bot, User, Paperclip, Camera, Image as ImageIcon, Trash2, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -20,6 +20,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Message {
   role: 'user' | 'model';
@@ -82,6 +93,8 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
               createdAt: new Date().toISOString(),
             });
           }
+        } catch (e) {
+          console.error(e);
         } finally { setIsSending(false); }
       })();
     }
@@ -119,6 +132,8 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           createdAt: new Date().toISOString(),
         });
       }
+    } catch (e) {
+      toast({ variant: "destructive", title: "Erro no Chat", description: "O Vet AI não conseguiu responder no momento." });
     } finally { setIsSending(false); }
   };
 
@@ -145,13 +160,13 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
         if (!analysis.isPetRelated) {
           addDocumentNonBlocking(messagesRef, {
             role: 'model',
-            content: "Desculpe, só posso analisar fotos de pets, rótulos de ração ou sintomas animais. Por favor, envie uma imagem válida.",
+            content: "Não foi possível analisar pois não se trata de um pet ou animal silvestre.",
             createdAt: new Date().toISOString(),
           });
           return;
         }
 
-        const fullResponse = `[LAUDO]\nID: ${analysis.identification}\nANÁLISE: ${analysis.analysis}\nSUGESTÃO: ${analysis.suggestions}`;
+        const fullResponse = `[ANÁLISE VET AI]\n\nIDENTIFICAÇÃO: ${analysis.identification}\n\nANÁLISE: ${analysis.analysis}\n\nSUGESTÕES: ${analysis.suggestions}`;
         addDocumentNonBlocking(messagesRef, {
           role: 'model',
           content: fullResponse,
@@ -163,6 +178,16 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     };
     reader.readAsDataURL(file);
     e.target.value = '';
+  };
+
+  const handleDeletePet = () => {
+    if (!petRef) return;
+    deleteDocumentNonBlocking(petRef);
+    toast({
+      title: "Pet Removido",
+      description: "O perfil e histórico foram excluídos com sucesso.",
+    });
+    router.push('/');
   };
 
   if (isUserLoading || isPetLoading || isMessagesLoading) {
@@ -181,15 +206,42 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       <main className="flex-1 flex flex-col container mx-auto px-4 py-4 max-w-4xl overflow-hidden">
         <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}><ArrowLeft className="w-5 h-5" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/5">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
             <div className="relative w-10 h-10 rounded-full border border-primary/20 overflow-hidden">
               <Image src={pet.photoURL || `https://picsum.photos/seed/${pet.id}/200/200`} alt={pet.name} fill className="object-cover" />
             </div>
             <div>
               <h2 className="text-sm font-bold premium-emerald-text">{pet.name}</h2>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{pet.species}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{pet.species} • {pet.breed || 'SRD'}</p>
             </div>
           </div>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                <Trash2 className="w-5 h-5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="bg-card border-white/10">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                  Excluir Pet?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-muted-foreground">
+                  Esta ação é permanente. Todos os dados, fotos e o histórico de chat de <strong>{pet.name}</strong> serão removidos para sempre.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="bg-white/5 border-white/10 hover:bg-white/10">Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeletePet} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Confirmar Exclusão
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         <ScrollArea className="flex-1 pr-4">
@@ -206,12 +258,17 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                         <Image src={msg.imageUrl} alt="Imagem enviada" fill className="object-cover" />
                       </div>
                     )}
-                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                    <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
                   </div>
                 </div>
               </div>
             ))}
-            {isSending && <div className="animate-pulse text-primary text-xs ml-11">Vet AI está pensando...</div>}
+            {isSending && (
+              <div className="flex gap-3 items-center ml-11">
+                <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                <span className="text-[10px] text-primary/70 font-bold uppercase tracking-widest">Vet AI analisando...</span>
+              </div>
+            )}
             <div ref={scrollRef} />
           </div>
         </ScrollArea>
@@ -231,9 +288,14 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Diga algo..." className="bg-transparent border-none focus-visible:ring-0" disabled={isSending} />
-            <Button type="submit" size="icon" className="bg-primary text-black rounded-xl" disabled={isSending || !input.trim()}><Send className="w-4 h-4" /></Button>
+            <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Diga algo ao Vet AI..." className="bg-transparent border-none focus-visible:ring-0 text-sm" disabled={isSending} />
+            <Button type="submit" size="icon" className="bg-primary text-black rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/10" disabled={isSending || !input.trim()}>
+              <Send className="w-4 h-4" />
+            </Button>
           </div>
+          <p className="text-[9px] text-center text-muted-foreground mt-3 uppercase tracking-widest opacity-40">
+            Auxílio Tecnológico • Consulte sempre um veterinário
+          </p>
         </form>
       </main>
     </div>
