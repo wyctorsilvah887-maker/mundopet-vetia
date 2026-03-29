@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -55,8 +54,8 @@ export function Navbar() {
             <>
               {user ? (
                 <>
-                  <span className="hidden md:inline-block text-sm font-semibold text-white/90">
-                    Olá, <span className="text-primary">{displayName.split(' ')[0]}</span>
+                  <span className="hidden md:inline-block text-sm font-medium text-muted-foreground">
+                    {displayName}
                   </span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
