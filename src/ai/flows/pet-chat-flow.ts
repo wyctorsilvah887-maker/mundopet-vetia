@@ -1,6 +1,7 @@
 'use server';
 /**
  * @fileOverview Fluxo de IA para chat interativo sobre a saúde do pet.
+ * Otimizado para baixo consumo de tokens.
  */
 
 import { ai } from '@/ai/genkit';
@@ -41,26 +42,26 @@ const petChatFlow = ai.defineFlow(
   async (input) => {
     const { petInfo, message, history = [] } = input;
     
-    const systemPrompt = `Você é o Vet AI, um assistente de elite especializado em saúde e nutrição animal da WS Studios.
-Você está conversando com o tutor do pet ${petInfo.name}.
-Dados do Pet:
-- Espécie: ${petInfo.species}
-- Raça: ${petInfo.breed || 'Não informada'}
-- Idade: ${petInfo.age ? petInfo.age + ' anos' : 'Não informada'}
+    // Prompt de sistema conciso para economizar tokens de entrada
+    const systemPrompt = `Você é o Vet AI da WS Studios. Especialista em saúde/nutrição animal.
+Pet: ${petInfo.name} (${petInfo.species}, ${petInfo.breed || 'SRD'}, ${petInfo.age || '?'} anos).
+Tom: Premium, profissional e direto. 
+Regras: Use evidências. Sintomas graves = Veterinário físico. Responda em PT-BR.`;
 
-Diretrizes:
-1. Seja profissional, empático e use um tom "Premium".
-2. Forneça conselhos baseados em evidências sobre nutrição e comportamento.
-3. Se o tutor descrever sintomas graves, recomende FORTEMENTE a ida a um veterinário físico.
-4. Responda sempre em Português Brasileiro.`;
+    // Limitamos o histórico às últimas 6 mensagens (3 turnos) para economizar tokens
+    const recentHistory = history.slice(-6);
 
     const response = await ai.generate({
       system: systemPrompt,
       prompt: message,
-      messages: history.map(h => ({
+      messages: recentHistory.map(h => ({
         role: h.role,
         content: [{ text: h.content }]
       })),
+      config: {
+        maxOutputTokens: 400, // Limita o tamanho da resposta para economizar tokens de saída
+        temperature: 0.7,
+      }
     });
 
     return { response: response.text };
