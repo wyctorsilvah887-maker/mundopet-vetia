@@ -55,7 +55,7 @@ export function Navbar() {
                 <DropdownMenuContent className="w-56 mt-2 bg-card border-white/10" align="start" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-bold leading-none premium-gold-text">{displayName}</p>
+                      <p className="text-sm font-bold leading-none premium-emerald-text">{displayName}</p>
                       <p className="text-xs leading-none text-muted-foreground">
                         {user.email}
                       </p>
@@ -68,7 +68,7 @@ export function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <span className="hidden md:inline-block text-sm premium-gold-text tracking-wide">
+              <span className="hidden md:inline-block text-sm premium-emerald-text tracking-wide">
                 {displayName}
               </span>
             </>
@@ -77,7 +77,7 @@ export function Navbar() {
 
         {/* Centro: Logotipo */}
         <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 group">
-          <div className="bg-gradient-to-br from-primary to-accent p-2.5 rounded-2xl text-black group-hover:scale-110 transition-transform duration-500 shadow-[0_0_20px_rgba(253,185,49,0.3)]">
+          <div className="bg-gradient-to-br from-primary to-accent p-2.5 rounded-2xl text-black group-hover:scale-110 transition-transform duration-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
             <PawPrint className="w-7 h-7" />
           </div>
           <span className="font-headline font-bold text-2xl tracking-tighter text-white group-hover:text-primary transition-colors">

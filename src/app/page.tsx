@@ -39,7 +39,7 @@ export default function Home() {
           </div>
           <h1 className="text-5xl md:text-7xl font-headline font-extrabold tracking-tight leading-tight">
             Saúde Animal em um <br />
-            <span className="premium-gold-text">Novo Patamar</span>
+            <span className="premium-emerald-text">Novo Patamar</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Diagnósticos inteligentes e nutrição de precisão para quem não abre mão do melhor para o seu pet.

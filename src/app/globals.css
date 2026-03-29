@@ -10,19 +10,19 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 4%;
     --popover-foreground: 0 0% 98%;
-    --primary: 35 100% 52%;
+    --primary: 160 84% 39%;
     --primary-foreground: 0 0% 0%;
     --secondary: 0 0% 9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 12%;
     --muted-foreground: 0 0% 65%;
-    --accent: 45 100% 50%;
+    --accent: 158 94% 45%;
     --accent-foreground: 0 0% 0%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 15%;
     --input: 0 0% 15%;
-    --ring: 35 100% 52%;
+    --ring: 160 84% 39%;
     --radius: 1rem;
   }
 }
@@ -36,7 +36,7 @@
   }
 }
 
-.premium-gold-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#FFD700] font-bold;
-  text-shadow: 0 0 20px rgba(253, 185, 49, 0.2);
+.premium-emerald-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] via-[#34d399] to-[#059669] font-bold;
+  text-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
 }
