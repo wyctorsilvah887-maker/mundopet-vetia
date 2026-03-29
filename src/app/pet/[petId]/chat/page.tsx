@@ -10,11 +10,17 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@
 import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
 import { petChat } from '@/ai/flows/pet-chat-flow';
 import { analyzeImagePetHealth } from '@/ai/flows/analyze-image-pet-health-flow';
-import { Loader2, Send, ArrowLeft, Bot, User, Sparkles, History, Paperclip, Camera, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Bot, User, Sparkles, Paperclip, Camera, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Message {
   role: 'user' | 'model';
@@ -34,7 +40,8 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   const [greetingProcessed, setGreetingProcessed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Referência do Pet
   const petRef = useMemoFirebase(() => {
@@ -114,6 +121,26 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     }
   }, [firestoreMessages, isSending]);
 
+  const requestPermissionAndTrigger = async (type: 'camera' | 'gallery') => {
+    try {
+      if (type === 'camera') {
+        // Tenta acessar a câmera para pedir permissão explícita
+        await navigator.mediaDevices.getUserMedia({ video: true });
+        cameraInputRef.current?.click();
+      } else {
+        // Para galeria, apenas informamos e clicamos
+        galleryInputRef.current?.click();
+      }
+    } catch (error) {
+      console.error("Permissão negada:", error);
+      toast({
+        variant: "destructive",
+        title: "Acesso Negado",
+        description: "Não foi possível acessar a câmera ou arquivos. Verifique as permissões do seu navegador.",
+      });
+    }
+  };
+
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isSending || !pet || !user || !firestore) return;
@@ -169,14 +196,14 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       
       addDocumentNonBlocking(messagesRef, {
         role: 'user',
-        content: "[Foto enviada para análise]",
+        content: "[Foto enviada para análise visual]",
         createdAt: new Date().toISOString(),
       });
 
       try {
         const analysis = await analyzeImagePetHealth({
           image: base64Image,
-          description: `Análise solicitada para ${pet.name} (${pet.species})`,
+          description: `Análise visual solicitada pelo tutor de ${pet.name}.`,
         });
 
         const fullResponse = `[LAUDO TÉCNICO VET AI]\n\nIdentificação: ${analysis.identification}\n\nAnálise: ${analysis.analysis}\n\nSugestões: ${analysis.suggestions}`;
@@ -189,20 +216,22 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
         toast({
           title: "Análise Concluída",
-          description: "A imagem foi processada com sucesso.",
+          description: "A imagem foi processada e o laudo foi gerado.",
         });
       } catch (error) {
         console.error("Erro na análise de imagem:", error);
         toast({
           variant: "destructive",
           title: "Erro na Análise",
-          description: "Não foi possível processar a imagem.",
+          description: "Ocorreu um problema ao processar a imagem por IA.",
         });
       } finally {
         setIsSending(false);
       }
     };
     reader.readAsDataURL(file);
+    // Limpa o valor para permitir selecionar a mesma imagem novamente se necessário
+    e.target.value = '';
   };
 
   if (isUserLoading || isPetLoading || isMessagesLoading) {
@@ -210,7 +239,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       <div className="flex min-h-screen items-center justify-center bg-black">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em]">Sincronizando...</span>
+          <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em]">Sincronizando Histórico...</span>
         </div>
       </div>
     );
@@ -249,7 +278,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           </div>
           <div className="hidden sm:flex bg-primary/5 border border-primary/20 px-3 py-1 rounded-full items-center gap-2">
             <Sparkles className="w-3 h-3 text-primary" />
-            <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">Elite WS Studios</span>
+            <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">AI Elite Support</span>
           </div>
         </div>
 
@@ -290,31 +319,59 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           </div>
         </ScrollArea>
 
-        {/* Input de Mensagem */}
+        {/* Input de Mensagem com Menu de Clipe */}
         <form onSubmit={handleSend} className="mt-4 pb-4">
           <div className="relative group">
             <div className="absolute inset-0 bg-primary/10 blur-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-700 pointer-events-none" />
             <div className="relative flex items-center gap-2 bg-white/5 border border-white/10 p-1.5 md:p-2 rounded-2xl backdrop-blur-2xl focus-within:border-primary/40 transition-all shadow-2xl">
               
+              {/* Inputs ocultos para os diferentes métodos */}
               <input 
                 type="file" 
-                ref={fileInputRef} 
+                ref={galleryInputRef} 
                 onChange={handleFileChange} 
                 accept="image/*" 
                 className="hidden" 
               />
+              <input 
+                type="file" 
+                ref={cameraInputRef} 
+                onChange={handleFileChange} 
+                accept="image/*" 
+                capture="environment" 
+                className="hidden" 
+              />
               
-              <Button 
-                type="button"
-                variant="ghost" 
-                size="icon"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-muted-foreground hover:text-primary hover:bg-white/5 transition-colors shrink-0 h-10 w-10"
-                disabled={isSending}
-                title="Anexar foto (Câmera ou Galeria)"
-              >
-                <Paperclip className="w-5 h-5" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="icon"
+                    className="text-muted-foreground hover:text-primary hover:bg-white/5 transition-colors shrink-0 h-10 w-10"
+                    disabled={isSending}
+                    title="Anexar arquivos"
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-card border-white/10 p-1 mb-2" align="start">
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 cursor-pointer focus:bg-primary/10 focus:text-primary text-xs font-bold uppercase tracking-widest"
+                    onClick={() => requestPermissionAndTrigger('camera')}
+                  >
+                    <Camera className="w-4 h-4" />
+                    Câmera
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 cursor-pointer focus:bg-primary/10 focus:text-primary text-xs font-bold uppercase tracking-widest"
+                    onClick={() => requestPermissionAndTrigger('gallery')}
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    Galeria
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <Input 
                 value={input}
@@ -334,9 +391,12 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
               </Button>
             </div>
           </div>
-          <p className="text-[9px] text-center text-muted-foreground/30 mt-3 uppercase tracking-[0.4em] font-bold">
-            Elite AI Technology • Análise Visual Integrada
-          </p>
+          <div className="flex items-center justify-center gap-2 mt-3 opacity-30">
+            <AlertCircle className="w-3 h-3 text-muted-foreground" />
+            <p className="text-[8px] text-center text-muted-foreground uppercase tracking-[0.4em] font-bold">
+              Diagnósticos Gerados por IA • Consulte Sempre um Veterinário
+            </p>
+          </div>
         </form>
       </main>
     </div>
