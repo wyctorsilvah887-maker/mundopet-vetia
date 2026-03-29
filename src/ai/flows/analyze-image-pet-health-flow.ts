@@ -1,52 +1,25 @@
 'use server';
 /**
- * @fileOverview Um agente de IA para análise de imagem de saúde animal.
- * Otimizado para o plano gratuito (Gemini 2.5 Flash).
+ * @fileOverview Agente de análise de imagem ultra-econômico.
+ * Implementa validação rápida para evitar gastos com conteúdo irrelevante.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AnalyzeImagePetHealthInputSchema = z.object({
-  image: z
-    .string()
-    .describe(
-      "Uma imagem relacionada à saúde do pet (rótulo de ração, alimento, sintoma), como uma data URI que deve incluir um tipo MIME e usar codificação Base64. Formato esperado: 'data:<mimetype>;base64,<encoded_data>'."
-    ),
-  description: z
-    .string()
-    .describe(
-      'Uma descrição adicional sobre a imagem, como o tipo de alimento, sintomas observados ou contexto.'
-    ),
+  image: z.string().describe("Data URI da imagem."),
+  description: z.string().optional(),
 });
-export type AnalyzeImagePetHealthInput = z.infer<
-  typeof AnalyzeImagePetHealthInputSchema
->;
 
 const AnalyzeImagePetHealthOutputSchema = z.object({
-  analysis: z
-    .string()
-    .describe(
-      'Análise detalhada da imagem fornecida, incluindo informações relevantes e possíveis implicações para a saúde do pet.'
-    ),
-  identification: z
-    .string()
-    .describe(
-      'Identificação do item alimentar, tipo de rótulo ou descrição do sintoma visual, se aplicável.'
-    ),
-  suggestions: z
-    .string()
-    .describe(
-      'Sugestões ou recomendações baseadas na análise da imagem, como próximos passos, cuidados ou alertas.'
-    ),
+  isPetRelated: z.boolean().describe('Se a imagem é de um animal ou saúde pet.'),
+  analysis: z.string().optional(),
+  identification: z.string().optional(),
+  suggestions: z.string().optional(),
 });
-export type AnalyzeImagePetHealthOutput = z.infer<
-  typeof AnalyzeImagePetHealthOutputSchema
->;
 
-export async function analyzeImagePetHealth(
-  input: AnalyzeImagePetHealthInput
-): Promise<AnalyzeImagePetHealthOutput> {
+export async function analyzeImagePetHealth(input: {image: string, description?: string}) {
   return analyzeImagePetHealthFlow(input);
 }
 
@@ -55,17 +28,18 @@ const analyzeImagePetHealthPrompt = ai.definePrompt({
   input: {schema: AnalyzeImagePetHealthInputSchema},
   output: {schema: AnalyzeImagePetHealthOutputSchema},
   config: {
-    maxOutputTokens: 500,
-    temperature: 0.3,
+    maxOutputTokens: 300,
+    temperature: 0.2,
   },
-  prompt: `Você é uma inteligência artificial especialista em saúde e nutrição animal da WS Studios. Analise a imagem e a descrição.
+  prompt: `Aja como Vet AI. 
+  PASSO 1: Verifique se a imagem é de um animal, sintoma animal ou rótulo de ração.
+  PASSO 2: Se NÃO for relacionado a pets, defina isPetRelated: false e pare.
+  PASSO 3: Se FOR relacionado, analise brevemente.
   
-Descrição do usuário: {{{description}}}
-
-Imagem para análise:
-{{media url=image}}
-
-Forneça um laudo técnico, direto e preciso em Português Brasileiro.`,
+  CONTEXTO: {{{description}}}
+  IMAGEM: {{media url=image}}
+  
+  Responda em PT-BR de forma ultra-concisa.`,
   model: 'googleai/gemini-2.5-flash',
 });
 

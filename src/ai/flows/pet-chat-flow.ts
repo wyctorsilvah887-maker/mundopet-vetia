@@ -1,7 +1,6 @@
 'use server';
 /**
- * @fileOverview Fluxo de IA para chat interativo.
- * Otimizado para o Plano Gratuito (Gemini 2.5 Flash) com baixa contagem de tokens.
+ * @fileOverview Fluxo de chat ultra-otimizado para economia de tokens.
  */
 
 import { ai } from '@/ai/genkit';
@@ -21,15 +20,11 @@ const PetChatInputSchema = z.object({
   })).optional(),
 });
 
-export type PetChatInput = z.infer<typeof PetChatInputSchema>;
-
 const PetChatOutputSchema = z.object({
-  response: z.string().describe('A resposta da IA.'),
+  response: z.string(),
 });
 
-export type PetChatOutput = z.infer<typeof PetChatOutputSchema>;
-
-export async function petChat(input: PetChatInput): Promise<PetChatOutput> {
+export async function petChat(input: z.infer<typeof PetChatInputSchema>) {
   return petChatFlow(input);
 }
 
@@ -41,36 +36,19 @@ const petChatFlow = ai.defineFlow(
   },
   async (input) => {
     const { petInfo, message, history = [] } = input;
+    const systemPrompt = `Vet AI da WS Studios. PACIENTE: ${petInfo.name} (${petInfo.species}, ${petInfo.breed || 'SRD'}).
     
-    const ageValue = petInfo.age || 0;
-    const ageSuffix = ageValue === 1 ? 'ano' : 'anos';
-    const ageDisplay = ageValue < 1 ? 'menos de 1 ano' : `${ageValue} ${ageSuffix}`;
-    
-    const systemPrompt = `Você é o Vet AI da WS Studios. 
-PACIENTE: ${petInfo.name} (${petInfo.species}, ${petInfo.breed || 'SRD'}, ${ageDisplay}).
-
-DIRETRIZES:
-1. Responda em Português Brasileiro.
-2. Seja técnico, mas acolhedor.
-3. Se "SAUDACAO_INICIAL_TRIGGER", responda: "Olá! Sou o Vet AI da WS Studios e é um prazer. ${petInfo.name} é um ${petInfo.species} e tem ${ageDisplay}. Sobre a raça ${petInfo.breed || 'SRD'}, é importante saber que [predisposição de saúde]... O que gostaria de saber agora?"
-4. SEMPRE corrija erros de escrita.
-5. Seja direto para economizar tokens.`;
-
-    // Memória Otimizada: 8 mensagens para manter o contexto sem estourar o limite gratuito
-    const recentHistory = history.slice(-8);
+    DIRETRIZES:
+    1. Responda em PT-BR de forma curta (máximo 3 frases).
+    2. Se "SAUDACAO_INICIAL_TRIGGER", diga: "Olá! Sou o Vet AI da WS Studios e é um prazer. ${petInfo.name} é um ${petInfo.species} e tem ${petInfo.age || 0} anos. Sobre a raça ${petInfo.breed || 'SRD'}, cuidado com [problema comum]. O que gostaria de saber?"
+    3. Corrija escrita do usuário.`;
 
     const response = await ai.generate({
       model: 'googleai/gemini-2.5-flash',
       system: systemPrompt,
       prompt: message,
-      messages: recentHistory.map(h => ({
-        role: h.role,
-        content: [{ text: h.content }]
-      })),
-      config: {
-        maxOutputTokens: 350, // Reduzido para economia máxima
-        temperature: 0.5,
-      }
+      messages: history.slice(-6).map(h => ({ role: h.role, content: [{ text: h.content }] })),
+      config: { maxOutputTokens: 250, temperature: 0.3 }
     });
 
     return { response: response.text };
