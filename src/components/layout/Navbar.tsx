@@ -55,9 +55,6 @@ export function Navbar() {
         <div className="flex-1 flex items-center justify-end gap-2 md:gap-3">
           {!isUserLoading && user ? (
             <div className="flex items-center gap-2 md:gap-3">
-              <span className="hidden sm:inline-block text-xs md:text-sm premium-emerald-text tracking-wide font-semibold text-right">
-                {displayName}
-              </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 md:h-11 md:w-11 rounded-full border border-primary/30 hover:border-primary transition-all duration-300 p-0 overflow-hidden shadow-[0_0_10px_rgba(16,185,129,0.1)]">
@@ -85,6 +82,9 @@ export function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <span className="hidden sm:inline-block text-xs md:text-sm premium-emerald-text tracking-wide font-semibold text-left">
+                {displayName}
+              </span>
             </div>
           ) : !isUserLoading && (
             <Link href="/login">
