@@ -36,9 +36,9 @@ export function Navbar() {
   const displayName = userProfile?.displayName || user?.displayName || 'Usuário';
 
   return (
-    <header className="border-b border-white/5 bg-black/60 backdrop-blur-xl sticky top-0 z-50">
-      <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between relative">
-        {/* Lado Esquerdo: Espaçador para manter o logo centralizado */}
+    <header className="border-b border-white/5 bg-black/60 backdrop-blur-xl sticky top-0 z-50 h-16 md:h-20">
+      <div className="container mx-auto px-4 h-full flex items-center justify-between relative">
+        {/* Lado Esquerdo: Espaçador */}
         <div className="flex-1" />
 
         {/* Centro: Logotipo */}
@@ -46,22 +46,22 @@ export function Navbar() {
           <div className="bg-gradient-to-br from-primary to-accent p-1.5 md:p-2.5 rounded-xl md:rounded-2xl text-black group-hover:scale-110 transition-transform duration-500">
             <PawPrint className="w-5 h-5 md:w-7 md:h-7" />
           </div>
-          <span className="font-headline font-bold text-xl md:text-2xl tracking-tighter text-white group-hover:text-primary transition-colors">
+          <span className="font-headline font-bold text-lg md:text-2xl tracking-tighter text-white group-hover:text-primary transition-colors">
             Vet<span className="text-primary">AI</span>
           </span>
         </Link>
 
         {/* Lado Direito: Perfil do Usuário */}
-        <div className="flex-1 flex items-center justify-end gap-2 md:gap-3">
+        <div className="flex-1 flex items-center justify-end">
           {!isUserLoading && user ? (
             <div className="flex items-center gap-2 md:gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 md:h-11 md:w-11 rounded-full border border-primary/30 hover:border-primary transition-all duration-300 p-0 overflow-hidden shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                  <Button variant="ghost" className="relative h-8 w-8 md:h-11 md:w-11 rounded-full border border-primary/30 hover:border-primary transition-all duration-300 p-0 overflow-hidden shadow-[0_0_10px_rgba(16,185,129,0.1)]">
                     <Avatar className="h-full w-full">
                       <AvatarImage src={userProfile?.photoURL || user.photoURL || ""} alt={displayName} />
                       <AvatarFallback className="bg-secondary text-primary">
-                        <User className="h-5 w-5 md:h-6 md:w-6" />
+                        <User className="h-4 h-4 md:h-6 md:w-6" />
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -82,13 +82,13 @@ export function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <span className="hidden sm:inline-block text-xs md:text-sm premium-emerald-text tracking-wide font-semibold text-left">
+              <span className="hidden sm:inline-block text-xs md:text-sm premium-emerald-text tracking-wide font-semibold truncate max-w-[100px] md:max-w-[150px]">
                 {displayName}
               </span>
             </div>
           ) : !isUserLoading && (
             <Link href="/login">
-              <Button variant="ghost" className="gap-2 h-9 text-[10px] md:text-xs text-primary hover:text-white hover:bg-white/5 font-bold transition-all uppercase tracking-widest">
+              <Button variant="ghost" className="gap-2 h-8 text-[9px] md:text-xs text-primary hover:text-white hover:bg-white/5 font-bold transition-all uppercase tracking-widest">
                 <LogIn className="h-3 w-3 md:h-4 md:w-4" />
                 <span>Entrar</span>
               </Button>

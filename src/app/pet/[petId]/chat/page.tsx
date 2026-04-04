@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, use } from 'react';
@@ -65,7 +66,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     return query(
       collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages'),
       orderBy('createdAt', 'asc'),
-      limit(50)
+      limit(50) // Limite de 50 mensagens para otimizar leitura e custos
     );
   }, [firestore, user?.uid, petId]);
 
@@ -201,42 +202,42 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   if (!pet) return null;
 
   return (
-    <div className="flex flex-col h-screen bg-black">
+    <div className="flex flex-col h-screen bg-black overflow-hidden">
       <Navbar />
-      <main className="flex-1 flex flex-col container mx-auto px-4 py-4 max-w-4xl overflow-hidden">
-        <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/5">
-              <ArrowLeft className="w-5 h-5" />
+      <main className="flex-1 flex flex-col container mx-auto px-4 py-2 md:py-4 max-w-4xl overflow-hidden">
+        <div className="flex items-center justify-between mb-2 md:mb-4 pb-2 md:pb-4 border-b border-white/5">
+          <div className="flex items-center gap-2 md:gap-3">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/5 h-8 w-8 md:h-10 md:w-10">
+              <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
             </Button>
-            <div className="relative w-10 h-10 rounded-full border border-primary/20 overflow-hidden">
+            <div className="relative w-8 h-8 md:w-10 md:h-10 rounded-full border border-primary/20 overflow-hidden">
               <Image src={pet.photoURL || `https://picsum.photos/seed/${pet.id}/200/200`} alt={pet.name} fill className="object-cover" />
             </div>
             <div>
-              <h2 className="text-sm font-bold premium-emerald-text">{pet.name}</h2>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{pet.species} • {pet.breed || 'SRD'}</p>
+              <h2 className="text-xs md:text-sm font-bold premium-emerald-text truncate max-w-[100px] md:max-w-none">{pet.name}</h2>
+              <p className="text-[8px] md:text-[10px] text-muted-foreground uppercase tracking-widest">{pet.species} • {pet.breed || 'SRD'}</p>
             </div>
           </div>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-                <Trash2 className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8 md:h-10 md:w-10">
+                <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="bg-card border-white/10">
+            <AlertDialogContent className="bg-card border-white/10 max-w-[90vw] md:max-w-lg rounded-2xl">
               <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                <AlertDialogTitle className="flex items-center gap-2 text-base md:text-lg">
+                  <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-destructive" />
                   Excluir Pet?
                 </AlertDialogTitle>
-                <AlertDialogDescription className="text-muted-foreground">
+                <AlertDialogDescription className="text-muted-foreground text-xs md:text-sm">
                   Esta ação é permanente. Todos os dados, fotos e o histórico de chat de <strong>{pet.name}</strong> serão removidos para sempre.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="bg-white/5 border-white/10 hover:bg-white/10">Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeletePet} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogFooter className="gap-2">
+                <AlertDialogCancel className="bg-white/5 border-white/10 hover:bg-white/10 text-xs md:text-sm">Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeletePet} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs md:text-sm">
                   Confirmar Exclusão
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -244,15 +245,15 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           </AlertDialog>
         </div>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6 py-4">
+        <ScrollArea className="flex-1 pr-2 md:pr-4">
+          <div className="space-y-4 md:space-y-6 py-2 md:py-4">
             {firestoreMessages?.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary text-black' : 'bg-white/5 text-primary border border-white/10'}`}>
-                    {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                <div className={`flex gap-2 md:gap-3 max-w-[90%] md:max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary text-black' : 'bg-white/5 text-primary border border-white/10'}`}>
+                    {msg.role === 'user' ? <User className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Bot className="w-3.5 h-3.5 md:w-4 md:h-4" />}
                   </div>
-                  <div className={`p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-primary/10 border border-primary/20' : 'bg-white/5 border border-white/10'}`}>
+                  <div className={`p-2.5 md:p-3 rounded-xl md:rounded-2xl text-[13px] md:text-sm ${msg.role === 'user' ? 'bg-primary/10 border border-primary/20' : 'bg-white/5 border border-white/10'}`}>
                     {msg.imageUrl && (
                       <div className="relative w-full aspect-square mb-2 rounded-lg overflow-hidden border border-white/10">
                         <Image src={msg.imageUrl} alt="Imagem enviada" fill className="object-cover" />
@@ -264,23 +265,23 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
               </div>
             ))}
             {isSending && (
-              <div className="flex gap-3 items-center ml-11">
+              <div className="flex gap-2 md:gap-3 items-center ml-9 md:ml-11">
                 <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                <span className="text-[10px] text-primary/70 font-bold uppercase tracking-widest">Vet AI analisando...</span>
+                <span className="text-[9px] md:text-[10px] text-primary/70 font-bold uppercase tracking-widest">Vet AI analisando...</span>
               </div>
             )}
             <div ref={scrollRef} />
           </div>
         </ScrollArea>
 
-        <form onSubmit={handleSend} className="mt-4 pb-4">
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 p-2 rounded-2xl">
+        <form onSubmit={handleSend} className="mt-2 md:mt-4 pb-2 md:pb-4 sticky bottom-0 bg-black">
+          <div className="flex items-center gap-1 md:gap-2 bg-white/5 border border-white/10 p-1.5 md:p-2 rounded-xl md:rounded-2xl">
             <input type="file" ref={galleryInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
             <input type="file" ref={cameraInputRef} onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" />
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary"><Paperclip className="w-5 h-5" /></Button>
+                <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-8 w-8 md:h-10 md:w-10 shrink-0"><Paperclip className="w-4 h-4 md:w-5 md:h-5" /></Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-card border-white/10">
                 <DropdownMenuItem className="cursor-pointer" onClick={() => cameraInputRef.current?.click()}><Camera className="mr-2 h-4 w-4" /> Câmera</DropdownMenuItem>
@@ -288,13 +289,13 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Diga algo ao Vet AI..." className="bg-transparent border-none focus-visible:ring-0 text-sm" disabled={isSending} />
-            <Button type="submit" size="icon" className="bg-primary text-black rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/10" disabled={isSending || !input.trim()}>
-              <Send className="w-4 h-4" />
+            <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Diga algo..." className="bg-transparent border-none focus-visible:ring-0 text-[13px] md:text-sm h-8 md:h-10 px-1 md:px-3" disabled={isSending} />
+            <Button type="submit" size="icon" className="bg-primary text-black rounded-lg md:rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 h-8 w-8 md:h-10 md:w-10 shrink-0" disabled={isSending || !input.trim()}>
+              <Send className="w-3.5 h-3.5 md:w-4 md:h-4" />
             </Button>
           </div>
-          <p className="text-[9px] text-center text-muted-foreground mt-3 uppercase tracking-widest opacity-40">
-            Auxílio Tecnológico • Consulte sempre um veterinário
+          <p className="text-[8px] text-center text-muted-foreground mt-2 uppercase tracking-widest opacity-40 leading-none">
+            Auxílio Tecnológico • Consulte um veterinário
           </p>
         </form>
       </main>
