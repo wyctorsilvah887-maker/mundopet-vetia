@@ -12,6 +12,8 @@
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
         "photoURL": { "type": "string", "format": "uri" },
+        "dailyUsageCount": { "type": "number", "description": "Contador de mensagens enviadas no dia atual." },
+        "lastUsageDate": { "type": "string", "description": "Data da última interação para reset diário (YYYY-MM-DD)." },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
@@ -42,6 +44,7 @@
       "properties": {
         "role": { "type": "string", "enum": ["user", "model"] },
         "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["role", "content", "createdAt"]
