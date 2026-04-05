@@ -11,6 +11,8 @@ import Image from 'next/image';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 const MAX_DAILY_MESSAGES = 6;
 
@@ -23,6 +25,7 @@ export function ImageAnalysisForm() {
 
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const userRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -95,6 +98,13 @@ export function ImageAnalysisForm() {
     }
   };
 
+  const handleSubscribeClick = () => {
+    toast({
+      title: "Em breve!",
+      description: "Estamos finalizando os últimos detalhes do Plano Elite. Fique atento às novidades!",
+    });
+  };
+
   if (isLimitReached) {
     return (
       <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-black to-accent/5 overflow-hidden shadow-2xl rounded-3xl mt-4">
@@ -108,7 +118,7 @@ export function ImageAnalysisForm() {
             <h3 className="text-3xl font-headline font-bold text-white tracking-tight">
               Limite de <span className="premium-emerald-text">Análise</span> Atingido
             </h3>
-            <p className="text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">
+            <p className="text-muted-foreground text-base leading-relaxed max-sm mx-auto">
               Seu acesso gratuito de {MAX_DAILY_MESSAGES} usos diários foi esgotado. Desbloqueie agora o Plano Elite.
             </p>
           </div>
@@ -133,6 +143,7 @@ export function ImageAnalysisForm() {
           </div>
 
           <Button 
+            onClick={handleSubscribeClick}
             className="w-full md:w-auto px-12 h-14 text-lg font-bold bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/20 transition-all rounded-2xl"
           >
             Assinar Plano Elite Agora

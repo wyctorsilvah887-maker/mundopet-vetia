@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useToast } from '@/hooks/use-toast';
 
 const MAX_DAILY_MESSAGES = 6;
 
@@ -21,6 +22,7 @@ export function TextAnalysisForm() {
   
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const userRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -71,6 +73,13 @@ export function TextAnalysisForm() {
     }
   };
 
+  const handleSubscribeClick = () => {
+    toast({
+      title: "Em breve!",
+      description: "Estamos finalizando os últimos detalhes do Plano Elite. Fique atento às novidades!",
+    });
+  };
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'Urgente': return 'bg-red-500 hover:bg-red-600 text-white';
@@ -119,6 +128,7 @@ export function TextAnalysisForm() {
           </div>
 
           <Button 
+            onClick={handleSubscribeClick}
             className="w-full md:w-auto px-12 h-14 text-lg font-bold bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/20 transition-all rounded-2xl"
           >
             Quero Ser Membro Elite

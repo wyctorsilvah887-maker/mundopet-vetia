@@ -218,6 +218,13 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     router.push('/');
   };
 
+  const handleSubscribeClick = () => {
+    toast({
+      title: "Em breve!",
+      description: "Estamos finalizando os últimos detalhes do Plano Elite. Fique atento às novidades!",
+    });
+  };
+
   if (isUserLoading || isPetLoading || isMessagesLoading || isProfileLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
@@ -339,6 +346,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                     </div>
 
                     <Button 
+                      onClick={handleSubscribeClick}
                       className="w-full md:w-auto px-12 h-12 md:h-14 text-sm md:text-lg font-bold bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/20 transition-all rounded-2xl active:scale-95"
                     >
                       Assinar Plano Elite
