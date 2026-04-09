@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect, useRef, use, useMemo } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -108,12 +109,19 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
               createdAt: new Date().toISOString(),
             });
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error("Erro na saudação:", e);
+          const isHighDemand = e.message?.includes('503') || e.message?.includes('high demand');
+          if (isHighDemand) {
+            toast({
+              title: "Vet AI Ocupado",
+              description: "Estamos com alta demanda agora. A saudação inicial falhou, mas você pode tentar enviar uma mensagem em instantes.",
+            });
+          }
         } finally { setIsSending(false); }
       })();
     }
-  }, [pet, firestoreMessages, isSending, isMessagesLoading, user, firestore, petId, greetingProcessed]);
+  }, [pet, firestoreMessages, isSending, isMessagesLoading, user, firestore, petId, greetingProcessed, toast]);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -162,7 +170,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       toast({ 
         variant: "destructive", 
         title: isHighDemand ? "IA em Alta Demanda" : "Erro no Chat", 
-        description: isHighDemand ? "O Vet AI está recebendo muitas consultas. Tente novamente em alguns segundos." : "O Vet AI não conseguiu responder no momento." 
+        description: isHighDemand ? "O Vet AI está recebendo muitas consultas no momento. Por favor, tente novamente em alguns segundos." : "O Vet AI não conseguiu responder no momento." 
       });
     } finally { setIsSending(false); }
   };
@@ -204,8 +212,13 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           content: fullResponse,
           createdAt: new Date().toISOString(),
         });
-      } catch (error) {
-        toast({ variant: "destructive", title: "Erro na Análise", description: "Falha ao processar imagem." });
+      } catch (e: any) {
+        const isHighDemand = e.message?.includes('503') || e.message?.includes('high demand');
+        toast({ 
+          variant: "destructive", 
+          title: isHighDemand ? "IA em Alta Demanda" : "Erro na Análise", 
+          description: isHighDemand ? "O serviço de imagem está instável devido ao alto volume. Tente novamente em breve." : "Falha ao processar imagem." 
+        });
       } finally { setIsSending(false); }
     };
     reader.readAsDataURL(file);
@@ -243,6 +256,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     <div className="flex flex-col h-screen bg-black overflow-hidden">
       <Navbar />
       <main className="flex-1 flex flex-col container mx-auto px-4 py-2 md:py-4 max-w-4xl overflow-hidden">
+        {/* Header do Chat com Contador */}
         <div className="flex items-center justify-between mb-2 md:mb-4 pb-2 md:pb-4 border-b border-white/5">
           <div className="flex items-center gap-2 md:gap-3">
             <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/5 h-8 w-8 md:h-10 md:w-10">
@@ -312,6 +326,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
               </div>
             ))}
             
+            {/* Card de Assinatura Elite ao atingir o limite */}
             {isLimitReached && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-8 mb-4 px-2">
                 <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-background to-accent/5 overflow-hidden shadow-2xl rounded-3xl">
@@ -366,6 +381,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           </div>
         </ScrollArea>
 
+        {/* Input do Chat - Escondido se atingir o limite */}
         {!isLimitReached && (
           <form onSubmit={handleSend} className="mt-2 md:mt-4 pb-2 md:pb-4 sticky bottom-0 bg-black">
             <div className="flex items-center gap-1 md:gap-2 bg-white/5 border border-white/10 p-1.5 md:p-2 rounded-xl md:rounded-2xl shadow-xl">
