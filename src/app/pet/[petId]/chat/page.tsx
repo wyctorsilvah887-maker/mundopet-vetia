@@ -157,8 +157,13 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           createdAt: new Date().toISOString(),
         });
       }
-    } catch (e) {
-      toast({ variant: "destructive", title: "Erro no Chat", description: "O Vet AI não conseguiu responder no momento." });
+    } catch (e: any) {
+      const isHighDemand = e.message?.includes('503') || e.message?.includes('high demand');
+      toast({ 
+        variant: "destructive", 
+        title: isHighDemand ? "IA em Alta Demanda" : "Erro no Chat", 
+        description: isHighDemand ? "O Vet AI está recebendo muitas consultas. Tente novamente em alguns segundos." : "O Vet AI não conseguiu responder no momento." 
+      });
     } finally { setIsSending(false); }
   };
 
@@ -308,7 +313,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
             ))}
             
             {isLimitReached && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-8 mb-4">
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-8 mb-4 px-2">
                 <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-background to-accent/5 overflow-hidden shadow-2xl rounded-3xl">
                   <div className="h-1.5 w-full bg-gradient-to-r from-primary to-accent" />
                   <CardContent className="p-6 md:p-10 text-center space-y-6">
@@ -321,18 +326,18 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                         Acesso <span className="premium-emerald-text">Elite</span> Necessário
                       </h3>
                       <p className="text-muted-foreground text-xs md:text-base leading-relaxed max-w-sm mx-auto">
-                        Você atingiu o limite de {MAX_DAILY_MESSAGES} interações. Assine o Plano Elite para continuar sem restrições.
+                        Você atingiu o limite de {MAX_DAILY_MESSAGES} interações diárias. Assine o Plano Elite para continuar cuidando do seu pet sem restrições.
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left max-w-md mx-auto py-4">
                       <div className="flex items-center gap-2 text-[10px] md:text-xs text-white/80">
                         <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-                        Consultas ilimitadas
+                        Consultas ilimitadas 24/7
                       </div>
                       <div className="flex items-center gap-2 text-[10px] md:text-xs text-white/80">
                         <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-                        Análise de exames
+                        Análise de exames e fotos
                       </div>
                     </div>
 
@@ -342,6 +347,10 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                     >
                       Assinar Plano Elite
                     </Button>
+                    
+                    <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-bold">
+                      Disponibilidade imediata após o lançamento
+                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -359,7 +368,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
         {!isLimitReached && (
           <form onSubmit={handleSend} className="mt-2 md:mt-4 pb-2 md:pb-4 sticky bottom-0 bg-black">
-            <div className="flex items-center gap-1 md:gap-2 bg-white/5 border border-white/10 p-1.5 md:p-2 rounded-xl md:rounded-2xl">
+            <div className="flex items-center gap-1 md:gap-2 bg-white/5 border border-white/10 p-1.5 md:p-2 rounded-xl md:rounded-2xl shadow-xl">
               <input type="file" ref={galleryInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
               <input type="file" ref={cameraInputRef} onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" />
               
@@ -376,8 +385,8 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
               <Input 
                 value={input} 
                 onChange={(e) => setInput(e.target.value)} 
-                placeholder="Diga algo..."
-                className="bg-transparent border-none focus-visible:ring-0 text-[13px] md:text-sm h-8 md:h-10 px-1 md:px-3 text-white" 
+                placeholder="Diga algo ao Vet AI..."
+                className="bg-transparent border-none focus-visible:ring-0 text-[13px] md:text-sm h-8 md:h-10 px-1 md:px-3 text-white placeholder:text-muted-foreground/50" 
                 disabled={isSending} 
               />
               <Button 

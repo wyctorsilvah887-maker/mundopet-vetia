@@ -1,7 +1,8 @@
 'use server';
 /**
  * @fileOverview Fluxo de chat otimizado para saudações completas e suporte premium.
- * Corrigido para garantir que a conversa comece com mensagem do usuário (requisito Gemini).
+ * Corrigido para garantir que a conversa comece com mensagem do usuário (requisito Gemini)
+ * e para fornecer saudações ricas em detalhes conforme solicitado.
  */
 
 import { ai } from '@/ai/genkit';
@@ -45,19 +46,21 @@ const petChatFlow = ai.defineFlow(
     DIRETRIZES:
     1. Responda sempre em Português Brasileiro (PT-BR).
     2. Se a mensagem for "SAUDACAO_INICIAL_TRIGGER", gere uma resposta seguindo exatamente esta estrutura:
-       - Cumprimente o usuário e apresente-se como Vet AI da WS Studios.
-       - Mencione o nome, espécie, raça e idade do(a) ${petInfo.name}.
-       - Forneça uma informação importante/curiosidade sobre a raça ${petInfo.breed || 'SRD'} ou espécie ${petInfo.species}.
-       - Pergunte se o pet apresenta algum problema de saúde ou sintoma no momento e como você pode ajudar.
-    3. Para conversas normais, seja direto e profissional, limitando-se a no máximo 5 frases.
-    4. Sempre recomende a consulta com um veterinário físico para diagnósticos definitivos.`;
+       - Cumprimente o usuário calorosamente e apresente-se como Vet AI da WS Studios.
+       - Mencione explicitamente o nome, espécie, raça e idade do(a) ${petInfo.name} na apresentação.
+       - Forneça uma informação importante, curiosidade ou cuidado preventivo sobre a raça ${petInfo.breed || 'SRD'} ou espécie ${petInfo.species}.
+       - Pergunte se o pet apresenta algum problema de saúde, sintoma ou dúvida nutricional no momento e como você pode ajudar.
+    3. Para conversas normais, seja direto, profissional e empático.
+    4. Sempre recomende a consulta com um veterinário físico para diagnósticos definitivos.
+    5. Limite suas respostas a no máximo 6 frases para clareza e economia.`;
 
-    // Filtra o histórico para garantir que a primeira mensagem seja 'user' (exigência Gemini)
+    // Converte o histórico para o formato Genkit/Gemini
     const chatMessages = history.map(h => ({ 
       role: h.role === 'model' ? 'model' as const : 'user' as const, 
       content: [{ text: h.content }] 
     }));
 
+    // Requisito Gemini: A conversa deve sempre começar com uma mensagem do usuário no histórico.
     const firstUserIndex = chatMessages.findIndex(m => m.role === 'user');
     const filteredHistory = firstUserIndex === -1 ? [] : chatMessages.slice(firstUserIndex);
 
@@ -67,12 +70,12 @@ const petChatFlow = ai.defineFlow(
       prompt: message,
       messages: filteredHistory,
       config: { 
-        maxOutputTokens: 600, 
-        temperature: 0.4 
+        maxOutputTokens: 800, 
+        temperature: 0.5 
       }
     });
 
-    return { response: response.text || "Desculpe, não consegui processar sua mensagem agora." };
+    return { response: response.text || "Desculpe, tive um problema temporário. Por favor, tente novamente em instantes." };
   }
 );
 
