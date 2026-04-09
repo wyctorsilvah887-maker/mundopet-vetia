@@ -27,19 +27,13 @@ export type AnalyzeTextualPetHealthOutput = z.infer<
   typeof AnalyzeTextualPetHealthOutputSchema
 >;
 
-export async function analyzeTextualPetHealth(
-  input: AnalyzeTextualPetHealthInput
-): Promise<AnalyzeTextualPetHealthOutput> {
-  return analyzeTextualPetHealthFlow(input);
-}
-
 const prompt = ai.definePrompt({
   name: 'analyzeTextualPetHealthPrompt',
   input: {schema: AnalyzeTextualPetHealthInputSchema},
   output: {schema: AnalyzeTextualPetHealthOutputSchema},
   model: 'googleai/gemini-2.5-flash',
   config: {
-    maxOutputTokens: 400,
+    maxOutputTokens: 500,
   },
   prompt: `Analise a descrição de saúde do pet abaixo e retorne um JSON com resumo, insights e sugestões.
 Idioma: Português Brasileiro.
@@ -55,6 +49,13 @@ const analyzeTextualPetHealthFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) throw new Error('Falha na resposta da IA');
+    return output;
   }
 );
+
+export async function analyzeTextualPetHealth(
+  input: AnalyzeTextualPetHealthInput
+): Promise<AnalyzeTextualPetHealthOutput> {
+  return analyzeTextualPetHealthFlow(input);
+}

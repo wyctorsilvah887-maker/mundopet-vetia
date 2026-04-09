@@ -1,7 +1,6 @@
 'use server';
 /**
  * @fileOverview Agente de análise de imagem ultra-econômico.
- * Implementa validação rápida para evitar gastos com conteúdo irrelevante.
  */
 
 import {ai} from '@/ai/genkit';
@@ -19,16 +18,12 @@ const AnalyzeImagePetHealthOutputSchema = z.object({
   suggestions: z.string().optional(),
 });
 
-export async function analyzeImagePetHealth(input: {image: string, description?: string}) {
-  return analyzeImagePetHealthFlow(input);
-}
-
 const analyzeImagePetHealthPrompt = ai.definePrompt({
   name: 'analyzeImagePetHealthPrompt',
   input: {schema: AnalyzeImagePetHealthInputSchema},
   output: {schema: AnalyzeImagePetHealthOutputSchema},
   config: {
-    maxOutputTokens: 300,
+    maxOutputTokens: 400,
     temperature: 0.2,
   },
   prompt: `Aja como Vet AI. 
@@ -39,7 +34,7 @@ const analyzeImagePetHealthPrompt = ai.definePrompt({
   CONTEXTO: {{{description}}}
   IMAGEM: {{media url=image}}
   
-  Responda em PT-BR de forma ultra-concisa.`,
+  Responda em PT-BR de forma clara e profissional.`,
   model: 'googleai/gemini-2.5-flash',
 });
 
@@ -51,6 +46,11 @@ const analyzeImagePetHealthFlow = ai.defineFlow(
   },
   async (input) => {
     const {output} = await analyzeImagePetHealthPrompt(input);
-    return output!;
+    if (!output) throw new Error('Falha na análise da IA');
+    return output;
   }
 );
+
+export async function analyzeImagePetHealth(input: {image: string, description?: string}) {
+  return analyzeImagePetHealthFlow(input);
+}

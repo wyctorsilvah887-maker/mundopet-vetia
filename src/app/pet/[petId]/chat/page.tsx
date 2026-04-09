@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef, use, useMemo } from 'react';
@@ -32,8 +31,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { AlertDialogTrigger } from '@radix-ui/react-alert-dialog';
 
 interface Message {
   role: 'user' | 'model';
@@ -110,7 +109,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
             });
           }
         } catch (e) {
-          console.error(e);
+          console.error("Erro na saudação:", e);
         } finally { setIsSending(false); }
       })();
     }
@@ -146,15 +145,15 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     });
 
     try {
-      const { response } = await petChat({
+      const result = await petChat({
         petInfo: { name: pet.name, species: pet.species, breed: pet.breed, age: pet.age },
         message: userMessage,
         history: firestoreMessages?.map(m => ({ role: m.role, content: m.content })) || [],
       });
-      if (response) {
+      if (result?.response) {
         addDocumentNonBlocking(messagesRef, {
           role: 'model',
-          content: response,
+          content: result.response,
           createdAt: new Date().toISOString(),
         });
       }
@@ -274,7 +273,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                     Excluir Pet?
                   </AlertDialogTitle>
                   <AlertDialogDescription className="text-muted-foreground text-xs md:text-sm">
-                    Esta ação é permanente. Todos os dados, fotos e o histórico de chat de <strong>{pet.name}</strong> serão removidos.
+                    Esta ação é permanente. Todos os dados e o histórico de <strong>{pet.name}</strong> serão removidos.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="gap-2">
@@ -319,29 +318,21 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                     
                     <div className="space-y-2">
                       <h3 className="text-xl md:text-3xl font-headline font-bold text-white tracking-tight">
-                        Acesso <span className="premium-emerald-text">Ilimitado</span> Esgotado
+                        Acesso <span className="premium-emerald-text">Elite</span> Necessário
                       </h3>
                       <p className="text-muted-foreground text-xs md:text-base leading-relaxed max-w-sm mx-auto">
-                        Você atingiu o limite diário de {MAX_DAILY_MESSAGES} interações. Assine o Plano Elite para continuar cuidando do seu pet sem restrições.
+                        Você atingiu o limite de {MAX_DAILY_MESSAGES} interações. Assine o Plano Elite para continuar sem restrições.
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left max-w-md mx-auto py-4">
                       <div className="flex items-center gap-2 text-[10px] md:text-xs text-white/80">
                         <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-                        Consultas ilimitadas 24h
+                        Consultas ilimitadas
                       </div>
                       <div className="flex items-center gap-2 text-[10px] md:text-xs text-white/80">
                         <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-                        Análise de exames avançada
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] md:text-xs text-white/80">
-                        <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-                        Suporte técnico prioritário
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] md:text-xs text-white/80">
-                        <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-                        Histórico vitalício salvo
+                        Análise de exames
                       </div>
                     </div>
 
@@ -351,10 +342,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                     >
                       Assinar Plano Elite
                     </Button>
-                    
-                    <p className="text-[9px] text-muted-foreground/60 uppercase tracking-widest">
-                      A partir de R$ 29,90/mês • Cancele quando quiser
-                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -403,14 +390,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
               </Button>
             </div>
           </form>
-        )}
-        
-        {isLimitReached && (
-          <div className="mt-4 pb-6 text-center">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] opacity-40">
-              Retorne amanhã ou assine o Plano Elite para continuar.
-            </p>
-          </div>
         )}
       </main>
     </div>
