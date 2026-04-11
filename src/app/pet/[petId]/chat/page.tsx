@@ -356,7 +356,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-xl md:text-3xl font-headline font-bold text-white tracking-tight">Acesso <span className="premium-emerald-text">Elite</span> Necessário</h3>
-                      <p className="text-muted-foreground text-xs md:text-base leading-relaxed max-w-sm mx-auto">Você atingiu o limite de {MAX_DAILY_MESSAGES} interações diárias. Assine o Plano Elite para continuar cuidando do seu pet.</p>
+                      <p className="text-muted-foreground text-xs md:text-base leading-relaxed max-sm mx-auto">Você atingiu o limite de {MAX_DAILY_MESSAGES} interações diárias. Assine o Plano Elite para continuar cuidando do seu pet.</p>
                     </div>
                     <Button onClick={handleSubscribeClick} className="w-full md:w-auto px-12 h-12 md:h-14 text-sm md:text-lg font-bold bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/20 transition-all rounded-2xl active:scale-95">Assinar Plano Elite</Button>
                   </CardContent>
