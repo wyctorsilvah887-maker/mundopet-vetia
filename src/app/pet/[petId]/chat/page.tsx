@@ -36,6 +36,7 @@ import {
 import { AlertDialogTrigger } from '@radix-ui/react-alert-dialog';
 
 interface Message {
+  id: string;
   role: 'user' | 'model';
   content: string;
   imageUrl?: string;
@@ -56,9 +57,11 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   const [isSending, setIsSending] = useState(false);
   const [messageLimit, setMessageLimit] = useState(INITIAL_MESSAGE_LIMIT);
   const [greetingProcessed, setGreetingProcessed] = useState(false);
+  
   const scrollRef = useRef<HTMLDivElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const lastMessageIdRef = useRef<string | null>(null);
 
   const userRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -78,14 +81,13 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     if (!firestore || !user?.uid || !petId) return null;
     return query(
       collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages'),
-      orderBy('createdAt', 'desc'), // Pegamos as mais recentes primeiro para a paginação
+      orderBy('createdAt', 'desc'),
       limit(messageLimit)
     );
   }, [firestore, user?.uid, petId, messageLimit]);
 
   const { data: firestoreMessages, isLoading: isMessagesLoading } = useCollection<Message>(messagesQuery);
 
-  // Invertemos a ordem para exibir cronologicamente na UI (antigas em cima, novas embaixo)
   const sortedMessages = firestoreMessages ? [...firestoreMessages].sort((a, b) => 
     new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   ) : [];
@@ -118,24 +120,27 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           }
         } catch (e: any) {
           console.error("Erro na saudação:", e);
-          const isHighDemand = e.message?.includes('503') || e.message?.includes('high demand');
-          if (isHighDemand) {
-            toast({
-              title: "Vet AI Ocupado",
-              description: "Estamos com alta demanda agora. A saudação inicial falhou, mas você pode tentar enviar uma mensagem em instantes.",
-            });
-          }
         } finally { setIsSending(false); }
       })();
     }
-  }, [pet, firestoreMessages, isSending, isMessagesLoading, user, firestore, petId, greetingProcessed, toast]);
+  }, [pet, firestoreMessages, isSending, isMessagesLoading, user, firestore, petId, greetingProcessed]);
 
   useEffect(() => {
-    // Só rola para o fim se for uma nova mensagem (não no carregamento de histórico)
-    if (scrollRef.current && !isMessagesLoading) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (sortedMessages.length > 0) {
+      const currentLastMessage = sortedMessages[sortedMessages.length - 1];
+      
+      // Só rola para o fim se:
+      // 1. For a primeira carga (id do último era nulo)
+      // 2. O ID da última mensagem mudou (nova mensagem recebida/enviada)
+      // 3. O usuário está em processo de envio
+      if (lastMessageIdRef.current !== currentLastMessage.id || isSending) {
+        if (scrollRef.current) {
+          scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+        lastMessageIdRef.current = currentLastMessage.id;
+      }
     }
-  }, [sortedMessages.length, isSending, isMessagesLoading]);
+  }, [sortedMessages, isSending]);
 
   const incrementUsage = () => {
     if (!userRef) return;
@@ -206,7 +211,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
       try {
         const analysis = await analyzeImagePetHealth({ image: base64Image });
-
         if (!analysis.isPetRelated) {
           addDocumentNonBlocking(messagesRef, {
             role: 'model',
@@ -223,11 +227,10 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           createdAt: new Date().toISOString(),
         });
       } catch (e: any) {
-        const isHighDemand = e.message?.includes('503') || e.message?.includes('high demand');
         toast({ 
           variant: "destructive", 
-          title: isHighDemand ? "IA em Alta Demanda" : "Erro na Análise", 
-          description: isHighDemand ? "O serviço de imagem está instável devido ao alto volume. Tente novamente em breve." : "Falha ao processar imagem." 
+          title: "Erro na Análise", 
+          description: "Falha ao processar imagem." 
         });
       } finally { setIsSending(false); }
     };
@@ -238,10 +241,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   const handleDeletePet = () => {
     if (!petRef) return;
     deleteDocumentNonBlocking(petRef);
-    toast({
-      title: "Pet Removido",
-      description: "O perfil e histórico foram excluídos com sucesso.",
-    });
+    toast({ title: "Pet Removido", description: "O perfil e histórico foram excluídos com sucesso." });
     router.push('/');
   };
 
@@ -250,10 +250,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   };
 
   const handleSubscribeClick = () => {
-    toast({
-      title: "Em breve!",
-      description: "Estamos finalizando os últimos detalhes do Plano Elite. Fique atento às novidades!",
-    });
+    toast({ title: "Em breve!", description: "Estamos finalizando os últimos detalhes do Plano Elite." });
   };
 
   if (isUserLoading || isPetLoading || isMessagesLoading || isProfileLoading) {
@@ -270,7 +267,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     <div className="flex flex-col h-screen bg-black overflow-hidden">
       <Navbar />
       <main className="flex-1 flex flex-col container mx-auto px-4 py-2 md:py-4 max-w-4xl overflow-hidden">
-        {/* Header do Chat */}
         <div className="flex items-center justify-between mb-2 md:mb-4 pb-2 md:pb-4 border-b border-white/5">
           <div className="flex items-center gap-2 md:gap-3">
             <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/5 h-8 w-8 md:h-10 md:w-10">
@@ -288,9 +284,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           <div className="flex items-center gap-2 md:gap-4">
             <Badge variant={isLimitReached ? "destructive" : "secondary"} className="h-6 md:h-8 px-2 md:px-3 bg-white/5 border-white/10 flex items-center gap-1.5 rounded-full">
               <Zap className={`w-3 h-3 ${isLimitReached ? "text-white" : "text-primary"}`} />
-              <span className="text-[9px] md:text-[11px] font-bold tracking-tight">
-                {usageCount}/{MAX_DAILY_MESSAGES}
-              </span>
+              <span className="text-[9px] md:text-[11px] font-bold tracking-tight">{usageCount}/{MAX_DAILY_MESSAGES}</span>
             </Badge>
 
             <AlertDialog>
@@ -311,9 +305,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                 </AlertDialogHeader>
                 <AlertDialogFooter className="gap-2">
                   <AlertDialogCancel className="bg-white/5 border-white/10 hover:bg-white/10 text-xs md:text-sm text-white">Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeletePet} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs md:text-sm">
-                    Confirmar Exclusão
-                  </AlertDialogAction>
+                  <AlertDialogAction onClick={handleDeletePet} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs md:text-sm">Confirmar Exclusão</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -322,7 +314,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
         <ScrollArea className="flex-1 pr-2 md:pr-4">
           <div className="space-y-4 md:space-y-6 py-2 md:py-4">
-            {/* Botão para carregar mais mensagens */}
             {firestoreMessages && firestoreMessages.length >= messageLimit && (
               <div className="flex justify-center mb-4">
                 <Button 
@@ -355,7 +346,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
               </div>
             ))}
             
-            {/* Card de Assinatura Elite ao atingir o limite */}
             {isLimitReached && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-8 mb-4 px-2">
                 <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-background to-accent/5 overflow-hidden shadow-2xl rounded-3xl">
@@ -364,33 +354,11 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                     <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-primary/20 rounded-full mb-2">
                       <Crown className="w-8 h-8 md:w-10 md:h-10 text-primary animate-pulse" />
                     </div>
-                    
                     <div className="space-y-2">
-                      <h3 className="text-xl md:text-3xl font-headline font-bold text-white tracking-tight">
-                        Acesso <span className="premium-emerald-text">Elite</span> Necessário
-                      </h3>
-                      <p className="text-muted-foreground text-xs md:text-base leading-relaxed max-w-sm mx-auto">
-                        Você atingiu o limite de {MAX_DAILY_MESSAGES} interações diárias. Assine o Plano Elite para continuar cuidando do seu pet sem restrições.
-                      </p>
+                      <h3 className="text-xl md:text-3xl font-headline font-bold text-white tracking-tight">Acesso <span className="premium-emerald-text">Elite</span> Necessário</h3>
+                      <p className="text-muted-foreground text-xs md:text-base leading-relaxed max-w-sm mx-auto">Você atingiu o limite de {MAX_DAILY_MESSAGES} interações diárias. Assine o Plano Elite para continuar cuidando do seu pet.</p>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left max-w-md mx-auto py-4">
-                      <div className="flex items-center gap-2 text-[10px] md:text-xs text-white/80">
-                        <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-                        Consultas ilimitadas 24/7
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] md:text-xs text-white/80">
-                        <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-                        Análise de exames e fotos
-                      </div>
-                    </div>
-
-                    <Button 
-                      onClick={handleSubscribeClick}
-                      className="w-full md:w-auto px-12 h-12 md:h-14 text-sm md:text-lg font-bold bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/20 transition-all rounded-2xl active:scale-95"
-                    >
-                      Assinar Plano Elite
-                    </Button>
+                    <Button onClick={handleSubscribeClick} className="w-full md:w-auto px-12 h-12 md:h-14 text-sm md:text-lg font-bold bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/20 transition-all rounded-2xl active:scale-95">Assinar Plano Elite</Button>
                   </CardContent>
                 </Card>
               </div>
@@ -406,7 +374,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           </div>
         </ScrollArea>
 
-        {/* Input do Chat */}
         {!isLimitReached && (
           <form onSubmit={handleSend} className="mt-2 md:mt-4 pb-2 md:pb-4 sticky bottom-0 bg-black">
             <div className="flex items-center gap-1 md:gap-2 bg-white/5 border border-white/10 p-1.5 md:p-2 rounded-xl md:rounded-2xl shadow-xl">
