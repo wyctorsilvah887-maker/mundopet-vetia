@@ -1,34 +1,32 @@
-# Guia de Integração: Conectando este Projeto (B) ao seu Projeto Principal (A)
+# Guia de Microsserviço: Integrando Vet AI ao Mundo Pet
 
-Se você já possui um aplicativo (Projeto A) funcionando e deseja que este novo aplicativo (Projeto B) utilize o **mesmo banco de dados e os mesmos usuários**, siga este fluxo.
+Este guia explica como configurar o **Vet AI** (este projeto) para atuar como um microsserviço especializado do seu ecossistema **Mundo Pet**.
 
-## O Conceito
-Você não precisa migrar dados. Você vai configurar este aplicativo para "apontar" para o servidor do Projeto A. Assim, ambos os apps lerão e gravarão na mesma fonte.
+## O Conceito de Microsserviço
+O Mundo Pet continua sendo seu aplicativo principal. O Vet AI funcionará em um endereço separado (ex: `ia.mundopet.com.br`) mas lerá os mesmos pets e usuários que já existem no seu banco.
 
-## Passo 1: Obter as Credenciais do seu Projeto A
-1. Acesse o [Console do Firebase](https://console.firebase.google.com/).
-2. Selecione o seu **Projeto A**.
-3. Clique na engrenagem (Configurações do Projeto) > Configurações do Projeto.
-4. Na aba "Geral", role até "Seus aplicativos" e copie o objeto `firebaseConfig`.
+## Passo 1: Conectar o Cérebro (Vet AI) ao Corpo (Mundo Pet)
+Para que o Vet AI reconheça seus usuários, você deve configurá-lo com as credenciais do Mundo Pet.
 
-## Passo 2: Atualizar a Configuração neste Projeto (B)
-Localize o arquivo `src/firebase/config.ts` neste código e substitua as credenciais atuais pelas que você copiou do Projeto A.
+1. Acesse o Console do Firebase do seu projeto **Mundo Pet**.
+2. Vá em Configurações do Projeto > Geral > Seus aplicativos.
+3. Copie o objeto `firebaseConfig`.
+4. Neste projeto (Vet AI), abra o arquivo `src/firebase/config.ts` e cole as credenciais.
 
-```typescript
-// src/firebase/config.ts
-export const firebaseConfig = {
-  "projectId": "SEU-PROJETO-A-ID",
-  "appId": "...",
-  "apiKey": "...",
-  // ... demais campos do Projeto A
-};
-```
+## Passo 2: Alinhamento de Dados
+O Vet AI espera encontrar os pets no seguinte caminho do Firestore:
+`users/{userId}/pets/{petId}`
 
-## Passo 3: O que acontece agora?
-Assim que você salvar a alteração acima:
-- **Usuários**: Se um usuário já tem conta no Projeto A, ele poderá fazer login aqui no Projeto B imediatamente.
-- **Pets e Dados**: Este app começará a listar os pets que estão salvos no Firestore do Projeto A (desde que os nomes das coleções como `users/{userId}/pets` sejam idênticos).
-- **Segurança**: As regras de segurança que você definiu no Projeto A passarão a valer para os acessos vindos deste app também.
+**Importante:** Se o seu projeto Mundo Pet salva os pets em um caminho diferente (ex: apenas `/pets`), você precisará ajustar as referências de coleção nos arquivos de página deste projeto para que a IA "enxergue" os animais corretos.
+
+## Passo 3: Autorização de Login
+Como o Vet AI usará o sistema de login do Mundo Pet:
+1. No Console do Firebase (Mundo Pet), vá em **Authentication > Configurações > Domínios Autorizados**.
+2. Adicione a URL onde o Vet AI está hospedado. Isso permite que seus usuários façam login com segurança neste microsserviço.
+
+## Passo 4: Fluxo do Usuário
+No seu aplicativo Mundo Pet, você pode simplesmente adicionar um botão:
+`"Consultar Vet AI"` -> que redireciona o usuário para a URL deste projeto, passando o ID do pet se necessário.
 
 ---
-**Nota sobre Domínios:** Se você publicar este app (Projeto B) em um novo endereço (URL), lembre-se de ir no Console do Projeto A e adicionar esse novo domínio em *Authentication > Configurações > Domínios Autorizados*.
+**Resultado:** Você terá dois aplicativos independentes, mas que compartilham a mesma inteligência e a mesma base de dados em tempo real.
