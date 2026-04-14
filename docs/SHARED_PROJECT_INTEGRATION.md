@@ -1,32 +1,23 @@
-# Guia de Microsserviço: Integrando Vet AI ao Mundo Pet
 
-Este guia explica como configurar o **Vet AI** (este projeto) para atuar como um microsserviço especializado do seu ecossistema **Mundo Pet**.
+# Guia de Microsserviço: Vet AI (Modo Independente)
 
-## O Conceito de Microsserviço
-O Mundo Pet continua sendo seu aplicativo principal. O Vet AI funcionará em um endereço separado (ex: `ia.mundopet.com.br`) mas lerá os mesmos pets e usuários que já existem no seu banco.
+Este guia explica como o **Vet AI** está configurado agora que possui seu próprio banco de dados e infraestrutura.
 
-## Passo 1: Conectar o Cérebro (Vet AI) ao Corpo (Mundo Pet)
-Para que o Vet AI reconheça seus usuários, você deve configurá-lo com as credenciais do Mundo Pet.
+## Estrutura Atual
+O projeto funciona de forma 100% autônoma, sem depender das credenciais diretas do aplicativo Mundo Pet principal, evitando conflitos de domínio.
 
-1. Acesse o Console do Firebase do seu projeto **Mundo Pet**.
-2. Vá em Configurações do Projeto > Geral > Seus aplicativos.
-3. Copie o objeto `firebaseConfig`.
-4. Neste projeto (Vet AI), abra o arquivo `src/firebase/config.ts` e cole as credenciais.
+## Como Publicar (Baseado no seu Console)
+Para enviar as atualizações para o endereço `vet-ia.web.app`:
 
-## Passo 2: Alinhamento de Dados
-O Vet AI espera encontrar os pets no seguinte caminho do Firestore:
-`users/{userId}/pets/{petId}`
+1. Certifique-se de que o `firebase.json` possui o atributo `"site": "vet-ia"`.
+2. No terminal, execute o comando:
+   ```bash
+   firebase deploy --only hosting:vet-ia
+   ```
+   *Ou clique no botão "Publicar" no Firebase Studio.*
 
-**Importante:** Se o seu projeto Mundo Pet salva os pets em um caminho diferente (ex: apenas `/pets`), você precisará ajustar as referências de coleção nos arquivos de página deste projeto para que a IA "enxergue" os animais corretos.
-
-## Passo 3: Autorização de Login
-Como o Vet AI usará o sistema de login do Mundo Pet:
-1. No Console do Firebase (Mundo Pet), vá em **Authentication > Configurações > Domínios Autorizados**.
-2. Adicione a URL onde o Vet AI está hospedado. Isso permite que seus usuários façam login com segurança neste microsserviço.
-
-## Passo 4: Fluxo do Usuário
-No seu aplicativo Mundo Pet, você pode simplesmente adicionar um botão:
-`"Consultar Vet AI"` -> que redireciona o usuário para a URL deste projeto, passando o ID do pet se necessário.
+## Segurança de Domínio
+Como especificamos o site no arquivo de configuração, o Firebase nunca tentará publicar este código no seu domínio principal (`mundopet-wsstudios.online`), garantindo a integridade do seu site principal.
 
 ---
-**Resultado:** Você terá dois aplicativos independentes, mas que compartilham a mesma inteligência e a mesma base de dados em tempo real.
+**Status:** Integração independente concluída com sucesso.
