@@ -32,8 +32,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { AlertDialogTrigger } from '@radix-ui/react-dialog';
 
 interface Message {
   id: string;
@@ -114,7 +114,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   const today = new Date().toISOString().split('T')[0];
   const usageCount = userProfile?.lastUsageDate === today ? (userProfile?.dailyUsageCount || 0) : 0;
   
-  // Lógica de limites baseada no plano
   const getDailyLimit = (plan?: string) => {
     if (plan === 'pro') return 999999;
     if (plan === 'premium') return 30;
