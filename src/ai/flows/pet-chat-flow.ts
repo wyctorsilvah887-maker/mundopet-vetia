@@ -1,8 +1,7 @@
-
 'use server';
 /**
- * @fileOverview Fluxo de chat otimizado para saudações completas e recomendações de consulta.
- * A IA agora detecta urgências e sugere agendamento de consultas físicas.
+ * @fileOverview Fluxo de chat com memória de prontuário.
+ * O Vet AI agora monitora consultas pendentes e sugere o fechamento quando o pet melhora.
  */
 
 import { ai } from '@/ai/genkit';
@@ -15,6 +14,11 @@ const PetChatInputSchema = z.object({
     breed: z.string().optional(),
     age: z.number().optional(),
   }),
+  pendingConsultations: z.array(z.object({
+    id: z.string(),
+    reason: z.string(),
+    createdAt: z.string(),
+  })).optional().describe('Lista de consultas ou sintomas ainda não resolvidos no prontuário.'),
   message: z.string(),
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
@@ -24,7 +28,8 @@ const PetChatInputSchema = z.object({
 
 const PetChatOutputSchema = z.object({
   response: z.string(),
-  recommendConsultation: z.boolean().describe('Verdadeiro se a IA detectar que uma consulta veterinária física é necessária ou urgente.'),
+  recommendConsultation: z.boolean().describe('Verdadeiro se for necessária uma nova consulta.'),
+  resolvedConsultationId: z.string().optional().describe('O ID da consulta pendente que deve ser marcada como concluída porque o pet melhorou.'),
 });
 
 const petChatFlow = ai.defineFlow(
@@ -34,39 +39,35 @@ const petChatFlow = ai.defineFlow(
     outputSchema: PetChatOutputSchema,
   },
   async (input) => {
-    const { petInfo, message, history = [] } = input;
+    const { petInfo, message, history = [], pendingConsultations = [] } = input;
     
-    const systemPrompt = `Você é o Vet AI Elite da WS Studios, um assistente veterinário inteligente e atencioso.
+    let pendingContext = "";
+    if (pendingConsultations.length > 0) {
+      pendingContext = "\nCONSULTAS/SINTOMAS PENDENTES NO PRONTUÁRIO:\n" + 
+        pendingConsultations.map(c => `- ID: ${c.id}, Motivo: ${c.reason}`).join('\n');
+    }
+
+    const systemPrompt = `Você é o Vet AI Elite da WS Studios.
     
     DADOS DO PACIENTE:
     - Nome: ${petInfo.name}
     - Espécie: ${petInfo.species}
     - Raça: ${petInfo.breed || 'SRD'}
     - Idade: ${petInfo.age || 0} anos
+    ${pendingContext}
 
     DIRETRIZES:
-    1. Responda sempre em Português Brasileiro (PT-BR).
-    2. Se a mensagem for "SAUDACAO_INICIAL_TRIGGER", gere uma resposta seguindo exatamente esta estrutura:
-       - Cumprimente o usuário calorosamente e apresente-se como Vet AI da WS Studios.
-       - Mencione explicitamente o nome, espécie, raça e idade do(a) ${petInfo.name} na apresentação.
-       - Forneça uma informação importante, curiosidade ou cuidado preventivo sobre a raça ${petInfo.breed || 'SRD'} ou espécie ${petInfo.species}.
-       - Pergunte se o pet apresenta algum problema de saúde, sintoma ou dúvida nutricional no momento e como você pode ajudar.
-    3. RECOMENDAÇÃO DE CONSULTA: Defina 'recommendConsultation' como TRUE se:
-       - O usuário relatar sintomas agudos (vômito, diarreia persistente, falta de ar, prostração grave, dor evidente).
-       - O pet apresentar sangramentos ou traumas.
-       - Houver ingestão de substâncias tóxicas.
-       - Você julgar que o caso necessita de exames físicos ou laboratoriais urgentes.
-    4. Para conversas normais, seja direto, profissional e empático.
-    5. Sempre recomende a consulta com um veterinário físico para diagnósticos definitivos.
-    6. Limite suas respostas a no máximo 6 frases para clareza e economia.`;
+    1. Se o usuário disser que o pet "está melhor", "melhorou", "não tem mais nada" ou relatos similares sobre um sintoma que está na lista de PENDENTES, você deve identificar o ID correspondente e definir 'resolvedConsultationId' com esse ID.
+    2. RECOMENDAÇÃO DE CONSULTA: Defina 'recommendConsultation' como TRUE se detectar novos sintomas graves.
+    3. Se a mensagem for "SAUDACAO_INICIAL_TRIGGER", apresente-se mencionando os dados do pet. Se houver algo PENDENTE, pergunte como o pet está evoluindo em relação a esse problema específico.
+    4. Limite suas respostas a no máximo 6 frases.
+    5. Idioma: PT-BR.`;
 
-    // Converte o histórico para o formato Genkit/Gemini
     const chatMessages = history.map(h => ({ 
       role: h.role === 'model' ? 'model' as const : 'user' as const, 
       content: [{ text: h.content }] 
     }));
 
-    // Requisito Gemini: A conversa deve sempre começar com uma mensagem do usuário no histórico.
     const firstUserIndex = chatMessages.findIndex(m => m.role === 'user');
     const filteredHistory = firstUserIndex === -1 ? [] : chatMessages.slice(firstUserIndex);
 
@@ -78,12 +79,12 @@ const petChatFlow = ai.defineFlow(
       output: { schema: PetChatOutputSchema },
       config: { 
         maxOutputTokens: 800, 
-        temperature: 0.5 
+        temperature: 0.4 
       }
     });
 
     return output || { 
-      response: "Desculpe, tive um problema temporário. Por favor, tente novamente em instantes.",
+      response: "Erro na análise.",
       recommendConsultation: false
     };
   }

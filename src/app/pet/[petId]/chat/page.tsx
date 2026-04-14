@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef, use } from 'react';
@@ -7,10 +6,10 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
+import { doc, collection, query, orderBy, limit, where } from 'firebase/firestore';
 import { petChat } from '@/ai/flows/pet-chat-flow';
 import { analyzeImagePetHealth } from '@/ai/flows/analyze-image-pet-health-flow';
-import { Loader2, Send, ArrowLeft, Bot, User, Paperclip, Camera, Image as ImageIcon, Trash2, AlertTriangle, Zap, Crown, CheckCircle, CalendarDays, CheckCircle2 } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Bot, User, Paperclip, Camera, Image as ImageIcon, Trash2, AlertTriangle, Zap, Crown, CalendarDays, CheckCircle2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Image from 'next/image';
@@ -45,8 +44,15 @@ interface Message {
   createdAt: string;
 }
 
+interface Consultation {
+  id: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+}
+
 const MAX_DAILY_MESSAGES = 6;
-const INITIAL_MESSAGE_LIMIT = 12;
+const INITIAL_MESSAGE_LIMIT = 15;
 
 export default function PetChatPage({ params }: { params: Promise<{ petId: string }> }) {
   const { petId } = use(params);
@@ -80,6 +86,17 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
   const { data: pet, isLoading: isPetLoading } = useDoc(petRef);
 
+  // Busca consultas PENDENTES para dar contexto à IA
+  const pendingConsultationsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid || !petId) return null;
+    return query(
+      collection(firestore, 'users', user.uid, 'pets', petId, 'consultations'),
+      where('status', '==', 'pending')
+    );
+  }, [firestore, user?.uid, petId]);
+
+  const { data: pendingConsultations } = useCollection<Consultation>(pendingConsultationsQuery);
+
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
     return query(
@@ -112,6 +129,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
         try {
           const result = await petChat({
             petInfo: { name: pet.name, species: pet.species, breed: pet.breed, age: pet.age },
+            pendingConsultations: pendingConsultations?.map(c => ({ id: c.id, reason: c.reason, createdAt: c.createdAt })),
             message: "SAUDACAO_INICIAL_TRIGGER",
           });
           if (result?.response && user && firestore) {
@@ -128,7 +146,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
         } finally { setIsSending(false); }
       })();
     }
-  }, [pet, firestoreMessages, isSending, isMessagesLoading, user, firestore, petId, greetingProcessed]);
+  }, [pet, firestoreMessages, isSending, isMessagesLoading, user, firestore, petId, greetingProcessed, pendingConsultations]);
 
   useEffect(() => {
     if (sortedMessages.length > 0) {
@@ -170,9 +188,11 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     try {
       const result = await petChat({
         petInfo: { name: pet.name, species: pet.species, breed: pet.breed, age: pet.age },
+        pendingConsultations: pendingConsultations?.map(c => ({ id: c.id, reason: c.reason, createdAt: c.createdAt })),
         message: userMessage,
         history: sortedMessages.map(m => ({ role: m.role, content: m.content })),
       });
+
       if (result?.response) {
         addDocumentNonBlocking(messagesRef, {
           role: 'model',
@@ -181,13 +201,22 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           isConsultationBooked: false,
           createdAt: new Date().toISOString(),
         });
+
+        // Se a IA resolveu uma consulta pendente
+        if (result.resolvedConsultationId) {
+          const consultRef = doc(firestore, 'users', user.uid, 'pets', petId, 'consultations', result.resolvedConsultationId);
+          updateDocumentNonBlocking(consultRef, { status: 'completed' });
+          toast({
+            title: "Prontuário Atualizado",
+            description: `${pet.name} está melhor! O registro foi marcado como concluído.`,
+          });
+        }
       }
     } catch (e: any) {
-      const isHighDemand = e.message?.includes('503') || e.message?.includes('high demand');
       toast({ 
         variant: "destructive", 
-        title: isHighDemand ? "IA em Alta Demanda" : "Erro no Chat", 
-        description: isHighDemand ? "O Vet AI está recebendo muitas consultas no momento." : "O Vet AI não conseguiu responder no momento." 
+        title: "Erro no Chat", 
+        description: "O Vet AI não conseguiu responder no momento." 
       });
     } finally { setIsSending(false); }
   };
@@ -196,7 +225,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     if (!user || !pet || !firestore || bookingMessageId) return;
     setBookingMessageId(messageId);
     try {
-      // 1. Registra a consulta no prontuário
       const consultationsRef = collection(firestore, 'users', user.uid, 'pets', petId, 'consultations');
       await addDocumentNonBlocking(consultationsRef, {
         userId: user.uid,
@@ -207,7 +235,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
         createdAt: new Date().toISOString(),
       });
 
-      // 2. Trava o botão na mensagem específica
       const msgRef = doc(firestore, 'users', user.uid, 'pets', petId, 'chatMessages', messageId);
       updateDocumentNonBlocking(msgRef, {
         isConsultationBooked: true
@@ -288,7 +315,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
               <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
             </Button>
             <div className="relative w-8 h-8 md:w-10 md:h-10 rounded-full border border-primary/20 overflow-hidden">
-              <Image src={pet.photoURL || `https://picsum.photos/seed/${pet.id}/200/200`} alt={pet.name} fill className="object-cover" />
+              <Image src={pet.photoURL || `https://picsum.photos/seed/${pet.id}/400/400`} alt={pet.name} fill className="object-cover" />
             </div>
             <div>
               <h2 className="text-xs md:text-sm font-bold premium-emerald-text truncate max-w-[80px] md:max-w-none">{pet.name}</h2>
@@ -362,9 +389,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                             Agendar Consulta no Prontuário
                           </Button>
                         )}
-                        <p className="text-[8px] text-muted-foreground mt-1 text-center font-medium uppercase tracking-tighter">
-                          {msg.isConsultationBooked ? "Acompanhe o status em seu painel" : "A IA detectou necessidade de avaliação profissional"}
-                        </p>
                       </div>
                     )}
                   </div>
