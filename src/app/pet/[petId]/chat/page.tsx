@@ -10,7 +10,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@
 import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
 import { petChat } from '@/ai/flows/pet-chat-flow';
 import { analyzeImagePetHealth } from '@/ai/flows/analyze-image-pet-health-flow';
-import { Loader2, Send, ArrowLeft, Bot, User, Paperclip, Camera, Image as ImageIcon, Trash2, AlertTriangle, Zap, Crown, CheckCircle, CalendarDays, Stethoscope } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Bot, User, Paperclip, Camera, Image as ImageIcon, Trash2, AlertTriangle, Zap, Crown, CheckCircle, CalendarDays, CheckCircle2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Image from 'next/image';
@@ -41,6 +41,7 @@ interface Message {
   content: string;
   imageUrl?: string;
   consultationRecommended?: boolean;
+  isConsultationBooked?: boolean;
   createdAt: string;
 }
 
@@ -56,7 +57,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [isScheduling, setIsScheduling] = useState(false);
+  const [bookingMessageId, setBookingMessageId] = useState<string | null>(null);
   const [messageLimit, setMessageLimit] = useState(INITIAL_MESSAGE_LIMIT);
   const [greetingProcessed, setGreetingProcessed] = useState(false);
   
@@ -118,6 +119,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
               role: 'model',
               content: result.response,
               consultationRecommended: result.recommendConsultation || false,
+              isConsultationBooked: false,
               createdAt: new Date().toISOString(),
             });
           }
@@ -176,6 +178,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           role: 'model',
           content: result.response,
           consultationRecommended: result.recommendConsultation || false,
+          isConsultationBooked: false,
           createdAt: new Date().toISOString(),
         });
       }
@@ -189,10 +192,11 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     } finally { setIsSending(false); }
   };
 
-  const handleScheduleConsultation = async (reason: string) => {
-    if (!user || !pet || !firestore) return;
-    setIsScheduling(true);
+  const handleScheduleConsultation = async (messageId: string, reason: string) => {
+    if (!user || !pet || !firestore || bookingMessageId) return;
+    setBookingMessageId(messageId);
     try {
+      // 1. Registra a consulta no prontuário
       const consultationsRef = collection(firestore, 'users', user.uid, 'pets', petId, 'consultations');
       await addDocumentNonBlocking(consultationsRef, {
         userId: user.uid,
@@ -202,6 +206,13 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
         suggestedByAi: true,
         createdAt: new Date().toISOString(),
       });
+
+      // 2. Trava o botão na mensagem específica
+      const msgRef = doc(firestore, 'users', user.uid, 'pets', petId, 'chatMessages', messageId);
+      updateDocumentNonBlocking(msgRef, {
+        isConsultationBooked: true
+      });
+
       toast({
         title: "Consulta Registrada",
         description: `Uma solicitação de consulta para ${pet.name} foi adicionada ao prontuário.`,
@@ -209,7 +220,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     } catch (e) {
       toast({ variant: "destructive", title: "Erro no Agendamento", description: "Não foi possível registrar a consulta." });
     } finally {
-      setIsScheduling(false);
+      setBookingMessageId(null);
     }
   };
 
@@ -238,7 +249,8 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
         addDocumentNonBlocking(messagesRef, {
           role: 'model',
           content: analysisResponse,
-          consultationRecommended: true, // Imagens de sintomas geralmente sugerem consulta
+          consultationRecommended: true,
+          isConsultationBooked: false,
           createdAt: new Date().toISOString(),
         });
       } catch (e: any) {
@@ -335,15 +347,24 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                     
                     {msg.consultationRecommended && msg.role === 'model' && (
                       <div className="animate-in fade-in slide-in-from-top-2 duration-500">
-                        <Button 
-                          onClick={() => handleScheduleConsultation(msg.content.substring(0, 100))}
-                          disabled={isScheduling}
-                          className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-black font-bold text-[10px] md:text-xs h-9 md:h-11 rounded-xl shadow-lg shadow-primary/10 gap-2"
-                        >
-                          {isScheduling ? <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" /> : <CalendarDays className="w-3 h-3 md:w-4 md:h-4" />}
-                          Agendar Consulta no Prontuário
-                        </Button>
-                        <p className="text-[8px] text-muted-foreground mt-1 text-center font-medium uppercase tracking-tighter">A IA detectou necessidade de avaliação profissional</p>
+                        {msg.isConsultationBooked ? (
+                          <div className="w-full bg-secondary/30 border border-primary/20 text-primary py-2.5 px-4 rounded-xl flex items-center justify-center gap-2">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider">Registrado no Prontuário</span>
+                          </div>
+                        ) : (
+                          <Button 
+                            onClick={() => handleScheduleConsultation(msg.id, msg.content.substring(0, 100))}
+                            disabled={bookingMessageId === msg.id}
+                            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-black font-bold text-[10px] md:text-xs h-9 md:h-11 rounded-xl shadow-lg shadow-primary/10 gap-2"
+                          >
+                            {bookingMessageId === msg.id ? <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" /> : <CalendarDays className="w-3 h-3 md:w-4 md:h-4" />}
+                            Agendar Consulta no Prontuário
+                          </Button>
+                        )}
+                        <p className="text-[8px] text-muted-foreground mt-1 text-center font-medium uppercase tracking-tighter">
+                          {msg.isConsultationBooked ? "Acompanhe o status em seu painel" : "A IA detectou necessidade de avaliação profissional"}
+                        </p>
                       </div>
                     )}
                   </div>

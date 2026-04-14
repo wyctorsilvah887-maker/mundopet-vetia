@@ -46,6 +46,7 @@
         "content": { "type": "string" },
         "imageUrl": { "type": "string" },
         "consultationRecommended": { "type": "boolean", "description": "Flag indicando se a IA sugeriu agendar uma consulta nesta resposta." },
+        "isConsultationBooked": { "type": "boolean", "description": "Flag indicando se o agendamento sugerido já foi realizado pelo usuário." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["role", "content", "createdAt"]
