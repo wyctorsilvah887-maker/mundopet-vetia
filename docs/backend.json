@@ -45,9 +45,26 @@
         "role": { "type": "string", "enum": ["user", "model"] },
         "content": { "type": "string" },
         "imageUrl": { "type": "string" },
+        "consultationRecommended": { "type": "boolean", "description": "Flag indicando se a IA sugeriu agendar uma consulta nesta resposta." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["role", "content", "createdAt"]
+    },
+    "Consultation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Consultation",
+      "type": "object",
+      "description": "Represents a pet consultation entry.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "petId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "scheduled", "completed", "cancelled"] },
+        "reason": { "type": "string" },
+        "suggestedByAi": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "petId", "status", "createdAt"]
     },
     "AnalysisResult": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -81,6 +98,10 @@
       {
         "path": "/users/{userId}/pets/{petId}/chatMessages/{messageId}",
         "definition": { "entityName": "ChatMessage" }
+      },
+      {
+        "path": "/users/{userId}/pets/{petId}/consultations/{consultationId}",
+        "definition": { "entityName": "Consultation" }
       },
       {
         "path": "/users/{userId}/analysisResults/{analysisResultId}",

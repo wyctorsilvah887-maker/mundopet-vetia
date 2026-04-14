@@ -19,6 +19,10 @@ service cloud.firestore {
         match /chatMessages/{messageId} {
           allow get, list, create: if isOwner(userId);
         }
+
+        match /consultations/{consultationId} {
+          allow get, list, create, update, delete: if isOwner(userId);
+        }
       }
 
       match /analysisResults/{analysisResultId} {

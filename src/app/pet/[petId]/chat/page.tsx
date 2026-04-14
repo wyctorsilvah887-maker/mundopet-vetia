@@ -10,7 +10,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@
 import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
 import { petChat } from '@/ai/flows/pet-chat-flow';
 import { analyzeImagePetHealth } from '@/ai/flows/analyze-image-pet-health-flow';
-import { Loader2, Send, ArrowLeft, Bot, User, Paperclip, Camera, Image as ImageIcon, Trash2, AlertTriangle, Zap, Crown, CheckCircle, ChevronUp } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Bot, User, Paperclip, Camera, Image as ImageIcon, Trash2, AlertTriangle, Zap, Crown, CheckCircle, CalendarDays, Stethoscope } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Image from 'next/image';
@@ -40,11 +40,12 @@ interface Message {
   role: 'user' | 'model';
   content: string;
   imageUrl?: string;
+  consultationRecommended?: boolean;
   createdAt: string;
 }
 
 const MAX_DAILY_MESSAGES = 6;
-const INITIAL_MESSAGE_LIMIT = 6;
+const INITIAL_MESSAGE_LIMIT = 12;
 
 export default function PetChatPage({ params }: { params: Promise<{ petId: string }> }) {
   const { petId } = use(params);
@@ -55,6 +56,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
   const [messageLimit, setMessageLimit] = useState(INITIAL_MESSAGE_LIMIT);
   const [greetingProcessed, setGreetingProcessed] = useState(false);
   
@@ -115,6 +117,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
             addDocumentNonBlocking(collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages'), {
               role: 'model',
               content: result.response,
+              consultationRecommended: result.recommendConsultation || false,
               createdAt: new Date().toISOString(),
             });
           }
@@ -128,11 +131,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   useEffect(() => {
     if (sortedMessages.length > 0) {
       const currentLastMessage = sortedMessages[sortedMessages.length - 1];
-      
-      // Só rola para o fim se:
-      // 1. For a primeira carga (id do último era nulo)
-      // 2. O ID da última mensagem mudou (nova mensagem recebida/enviada)
-      // 3. O usuário está em processo de envio
       if (lastMessageIdRef.current !== currentLastMessage.id || isSending) {
         if (scrollRef.current) {
           scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -177,6 +175,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
         addDocumentNonBlocking(messagesRef, {
           role: 'model',
           content: result.response,
+          consultationRecommended: result.recommendConsultation || false,
           createdAt: new Date().toISOString(),
         });
       }
@@ -185,9 +184,33 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       toast({ 
         variant: "destructive", 
         title: isHighDemand ? "IA em Alta Demanda" : "Erro no Chat", 
-        description: isHighDemand ? "O Vet AI está recebendo muitas consultas no momento. Por favor, tente novamente em alguns segundos." : "O Vet AI não conseguiu responder no momento." 
+        description: isHighDemand ? "O Vet AI está recebendo muitas consultas no momento." : "O Vet AI não conseguiu responder no momento." 
       });
     } finally { setIsSending(false); }
+  };
+
+  const handleScheduleConsultation = async (reason: string) => {
+    if (!user || !pet || !firestore) return;
+    setIsScheduling(true);
+    try {
+      const consultationsRef = collection(firestore, 'users', user.uid, 'pets', petId, 'consultations');
+      await addDocumentNonBlocking(consultationsRef, {
+        userId: user.uid,
+        petId: petId,
+        status: 'pending',
+        reason: reason,
+        suggestedByAi: true,
+        createdAt: new Date().toISOString(),
+      });
+      toast({
+        title: "Consulta Registrada",
+        description: `Uma solicitação de consulta para ${pet.name} foi adicionada ao prontuário.`,
+      });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Erro no Agendamento", description: "Não foi possível registrar a consulta." });
+    } finally {
+      setIsScheduling(false);
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -211,27 +234,15 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
       try {
         const analysis = await analyzeImagePetHealth({ image: base64Image });
-        if (!analysis.isPetRelated) {
-          addDocumentNonBlocking(messagesRef, {
-            role: 'model',
-            content: "Não foi possível analisar pois não se trata de um pet ou animal silvestre.",
-            createdAt: new Date().toISOString(),
-          });
-          return;
-        }
-
-        const fullResponse = `[ANÁLISE VET AI]\n\nIDENTIFICAÇÃO: ${analysis.identification}\n\nANÁLISE: ${analysis.analysis}\n\nSUGESTÕES: ${analysis.suggestions}`;
+        const analysisResponse = `[ANÁLISE VET AI]\n\nIDENTIFICAÇÃO: ${analysis.identification}\n\nANÁLISE: ${analysis.analysis}\n\nSUGESTÕES: ${analysis.suggestions}`;
         addDocumentNonBlocking(messagesRef, {
           role: 'model',
-          content: fullResponse,
+          content: analysisResponse,
+          consultationRecommended: true, // Imagens de sintomas geralmente sugerem consulta
           createdAt: new Date().toISOString(),
         });
       } catch (e: any) {
-        toast({ 
-          variant: "destructive", 
-          title: "Erro na Análise", 
-          description: "Falha ao processar imagem." 
-        });
+        toast({ variant: "destructive", title: "Erro na Análise", description: "Falha ao processar imagem." });
       } finally { setIsSending(false); }
     };
     reader.readAsDataURL(file);
@@ -241,16 +252,8 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   const handleDeletePet = () => {
     if (!petRef) return;
     deleteDocumentNonBlocking(petRef);
-    toast({ title: "Pet Removido", description: "O perfil e histórico foram excluídos com sucesso." });
+    toast({ title: "Pet Removido", description: "Perfil excluído com sucesso." });
     router.push('/');
-  };
-
-  const handleLoadMore = () => {
-    setMessageLimit(prev => prev + 6);
-  };
-
-  const handleSubscribeClick = () => {
-    toast({ title: "Em breve!", description: "Estamos finalizando os últimos detalhes do Plano Elite." });
   };
 
   if (isUserLoading || isPetLoading || isMessagesLoading || isProfileLoading) {
@@ -289,7 +292,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8 md:h-10 md:w-10">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8 md:h-10 md:w-10">
                   <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
                 </Button>
               </AlertDialogTrigger>
@@ -300,12 +303,12 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                     Excluir Pet?
                   </AlertDialogTitle>
                   <AlertDialogDescription className="text-muted-foreground text-xs md:text-sm">
-                    Esta ação é permanente. Todos os dados e o histórico de <strong>{pet.name}</strong> serão removidos.
+                    Esta ação é permanente. Todos os dados de <strong>{pet.name}</strong> serão removidos.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="gap-2">
-                  <AlertDialogCancel className="bg-white/5 border-white/10 hover:bg-white/10 text-xs md:text-sm text-white">Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeletePet} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs md:text-sm">Confirmar Exclusão</AlertDialogAction>
+                  <AlertDialogCancel className="bg-white/5 border-white/10 text-white">Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeletePet} className="bg-destructive text-white">Excluir</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -314,60 +317,57 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
         <ScrollArea className="flex-1 pr-2 md:pr-4">
           <div className="space-y-4 md:space-y-6 py-2 md:py-4">
-            {firestoreMessages && firestoreMessages.length >= messageLimit && (
-              <div className="flex justify-center mb-4">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleLoadMore}
-                  className="text-[10px] text-muted-foreground hover:text-primary font-bold uppercase tracking-widest h-8 gap-1.5 bg-white/5 border border-white/5 rounded-full px-4"
-                >
-                  <ChevronUp className="w-3 h-3" />
-                  Carregar mensagens anteriores
-                </Button>
-              </div>
-            )}
-
             {sortedMessages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`flex gap-2 md:gap-3 max-w-[90%] md:max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                   <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary text-black' : 'bg-white/5 text-primary border border-white/10'}`}>
                     {msg.role === 'user' ? <User className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Bot className="w-3.5 h-3.5 md:w-4 md:h-4" />}
                   </div>
-                  <div className={`p-2.5 md:p-3 rounded-xl md:rounded-2xl text-[13px] md:text-sm ${msg.role === 'user' ? 'bg-primary/10 border border-primary/20' : 'bg-white/5 border border-white/10'}`}>
-                    {msg.imageUrl && (
-                      <div className="relative w-full aspect-square mb-2 rounded-lg overflow-hidden border border-white/10">
-                        <Image src={msg.imageUrl} alt="Imagem enviada" fill className="object-cover" />
+                  <div className="flex flex-col gap-2">
+                    <div className={`p-2.5 md:p-3 rounded-xl md:rounded-2xl text-[13px] md:text-sm ${msg.role === 'user' ? 'bg-primary/10 border border-primary/20' : 'bg-white/5 border border-white/10'}`}>
+                      {msg.imageUrl && (
+                        <div className="relative w-full aspect-square mb-2 rounded-lg overflow-hidden border border-white/10">
+                          <Image src={msg.imageUrl} alt="Imagem" fill className="object-cover" />
+                        </div>
+                      )}
+                      <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                    </div>
+                    
+                    {msg.consultationRecommended && msg.role === 'model' && (
+                      <div className="animate-in fade-in slide-in-from-top-2 duration-500">
+                        <Button 
+                          onClick={() => handleScheduleConsultation(msg.content.substring(0, 100))}
+                          disabled={isScheduling}
+                          className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-black font-bold text-[10px] md:text-xs h-9 md:h-11 rounded-xl shadow-lg shadow-primary/10 gap-2"
+                        >
+                          {isScheduling ? <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" /> : <CalendarDays className="w-3 h-3 md:w-4 md:h-4" />}
+                          Agendar Consulta no Prontuário
+                        </Button>
+                        <p className="text-[8px] text-muted-foreground mt-1 text-center font-medium uppercase tracking-tighter">A IA detectou necessidade de avaliação profissional</p>
                       </div>
                     )}
-                    <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
                   </div>
                 </div>
               </div>
             ))}
             
             {isLimitReached && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-8 mb-4 px-2">
-                <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-background to-accent/5 overflow-hidden shadow-2xl rounded-3xl">
-                  <div className="h-1.5 w-full bg-gradient-to-r from-primary to-accent" />
-                  <CardContent className="p-6 md:p-10 text-center space-y-6">
-                    <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-primary/20 rounded-full mb-2">
-                      <Crown className="w-8 h-8 md:w-10 md:h-10 text-primary animate-pulse" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-xl md:text-3xl font-headline font-bold text-white tracking-tight">Acesso <span className="premium-emerald-text">Elite</span> Necessário</h3>
-                      <p className="text-muted-foreground text-xs md:text-base leading-relaxed max-sm mx-auto">Você atingiu o limite de {MAX_DAILY_MESSAGES} interações diárias. Assine o Plano Elite para continuar cuidando do seu pet.</p>
-                    </div>
-                    <Button onClick={handleSubscribeClick} className="w-full md:w-auto px-12 h-12 md:h-14 text-sm md:text-lg font-bold bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/20 transition-all rounded-2xl active:scale-95">Assinar Plano Elite</Button>
+              <div className="mt-8 mb-4 px-2">
+                <Card className="border-primary/30 bg-primary/5 rounded-3xl overflow-hidden">
+                  <CardContent className="p-6 md:p-10 text-center space-y-4">
+                    <Crown className="w-10 h-10 text-primary mx-auto animate-pulse" />
+                    <h3 className="text-xl md:text-2xl font-bold">Acesso Elite Necessário</h3>
+                    <p className="text-muted-foreground text-xs md:text-sm">Você atingiu o limite diário de {MAX_DAILY_MESSAGES} mensagens.</p>
+                    <Button className="w-full md:w-auto px-8 h-12 bg-primary text-black font-bold rounded-xl">Assinar Plano Elite</Button>
                   </CardContent>
                 </Card>
               </div>
             )}
 
             {isSending && (
-              <div className="flex gap-2 md:gap-3 items-center ml-9 md:ml-11">
+              <div className="flex gap-2 items-center ml-9 md:ml-11">
                 <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                <span className="text-[9px] md:text-[10px] text-primary/70 font-bold uppercase tracking-widest">Vet AI analisando...</span>
+                <span className="text-[9px] text-primary/70 font-bold uppercase tracking-widest">Vet AI analisando...</span>
               </div>
             )}
             <div ref={scrollRef} />
@@ -376,13 +376,13 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
         {!isLimitReached && (
           <form onSubmit={handleSend} className="mt-2 md:mt-4 pb-2 md:pb-4 sticky bottom-0 bg-black">
-            <div className="flex items-center gap-1 md:gap-2 bg-white/5 border border-white/10 p-1.5 md:p-2 rounded-xl md:rounded-2xl shadow-xl">
+            <div className="flex items-center gap-1 md:gap-2 bg-white/5 border border-white/10 p-1.5 md:p-2 rounded-xl md:rounded-2xl">
               <input type="file" ref={galleryInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
               <input type="file" ref={cameraInputRef} onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" />
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-8 w-8 md:h-10 md:w-10 shrink-0"><Paperclip className="w-4 h-4 md:w-5 md:h-5" /></Button>
+                  <Button type="button" variant="ghost" size="icon" className="text-muted-foreground h-8 w-8 md:h-10 md:w-10 shrink-0"><Paperclip className="w-4 h-4 md:w-5 md:h-5" /></Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-card border-white/10 text-white">
                   <DropdownMenuItem className="cursor-pointer" onClick={() => cameraInputRef.current?.click()}><Camera className="mr-2 h-4 w-4" /> Câmera</DropdownMenuItem>
@@ -394,13 +394,13 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                 value={input} 
                 onChange={(e) => setInput(e.target.value)} 
                 placeholder="Diga algo ao Vet AI..."
-                className="bg-transparent border-none focus-visible:ring-0 text-[13px] md:text-sm h-8 md:h-10 px-1 md:px-3 text-white placeholder:text-muted-foreground/50" 
+                className="bg-transparent border-none focus-visible:ring-0 text-[13px] md:text-sm h-8 md:h-10 px-1 md:px-3 text-white" 
                 disabled={isSending} 
               />
               <Button 
                 type="submit" 
                 size="icon" 
-                className="bg-primary text-black rounded-lg md:rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 h-8 w-8 md:h-10 md:w-10 shrink-0" 
+                className="bg-primary text-black rounded-lg md:rounded-xl h-8 w-8 md:h-10 md:w-10 shrink-0" 
                 disabled={isSending || !input.trim()}
               >
                 <Send className="w-3.5 h-3.5 md:w-4 md:h-4" />

@@ -1,8 +1,8 @@
+
 'use server';
 /**
- * @fileOverview Fluxo de chat otimizado para saudações completas e suporte premium.
- * Corrigido para garantir que a conversa comece com mensagem do usuário (requisito Gemini)
- * e para fornecer saudações ricas em detalhes conforme solicitado.
+ * @fileOverview Fluxo de chat otimizado para saudações completas e recomendações de consulta.
+ * A IA agora detecta urgências e sugere agendamento de consultas físicas.
  */
 
 import { ai } from '@/ai/genkit';
@@ -24,6 +24,7 @@ const PetChatInputSchema = z.object({
 
 const PetChatOutputSchema = z.object({
   response: z.string(),
+  recommendConsultation: z.boolean().describe('Verdadeiro se a IA detectar que uma consulta veterinária física é necessária ou urgente.'),
 });
 
 const petChatFlow = ai.defineFlow(
@@ -50,9 +51,14 @@ const petChatFlow = ai.defineFlow(
        - Mencione explicitamente o nome, espécie, raça e idade do(a) ${petInfo.name} na apresentação.
        - Forneça uma informação importante, curiosidade ou cuidado preventivo sobre a raça ${petInfo.breed || 'SRD'} ou espécie ${petInfo.species}.
        - Pergunte se o pet apresenta algum problema de saúde, sintoma ou dúvida nutricional no momento e como você pode ajudar.
-    3. Para conversas normais, seja direto, profissional e empático.
-    4. Sempre recomende a consulta com um veterinário físico para diagnósticos definitivos.
-    5. Limite suas respostas a no máximo 6 frases para clareza e economia.`;
+    3. RECOMENDAÇÃO DE CONSULTA: Defina 'recommendConsultation' como TRUE se:
+       - O usuário relatar sintomas agudos (vômito, diarreia persistente, falta de ar, prostração grave, dor evidente).
+       - O pet apresentar sangramentos ou traumas.
+       - Houver ingestão de substâncias tóxicas.
+       - Você julgar que o caso necessita de exames físicos ou laboratoriais urgentes.
+    4. Para conversas normais, seja direto, profissional e empático.
+    5. Sempre recomende a consulta com um veterinário físico para diagnósticos definitivos.
+    6. Limite suas respostas a no máximo 6 frases para clareza e economia.`;
 
     // Converte o histórico para o formato Genkit/Gemini
     const chatMessages = history.map(h => ({ 
@@ -64,18 +70,22 @@ const petChatFlow = ai.defineFlow(
     const firstUserIndex = chatMessages.findIndex(m => m.role === 'user');
     const filteredHistory = firstUserIndex === -1 ? [] : chatMessages.slice(firstUserIndex);
 
-    const response = await ai.generate({
+    const { output } = await ai.generate({
       model: 'googleai/gemini-2.5-flash',
       system: systemPrompt,
       prompt: message,
       messages: filteredHistory,
+      output: { schema: PetChatOutputSchema },
       config: { 
         maxOutputTokens: 800, 
         temperature: 0.5 
       }
     });
 
-    return { response: response.text || "Desculpe, tive um problema temporário. Por favor, tente novamente em instantes." };
+    return output || { 
+      response: "Desculpe, tive um problema temporário. Por favor, tente novamente em instantes.",
+      recommendConsultation: false
+    };
   }
 );
 
