@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef, use } from 'react';
@@ -52,7 +51,7 @@ interface Consultation {
   createdAt: string;
 }
 
-const INITIAL_MESSAGE_LIMIT = 15;
+const INITIAL_MESSAGE_LIMIT = 20;
 
 export default function PetChatPage({ params }: { params: Promise<{ petId: string }> }) {
   const { petId } = use(params);
@@ -214,7 +213,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           updateDocumentNonBlocking(consultRef, { status: 'completed' });
           toast({
             title: "Prontuário Atualizado",
-            description: `${pet.name} está melhor! O registro foi marcado como concluído.`,
+            description: `${pet.name} está melhor! Marcamos o registro como concluído.`,
           });
         }
       }
@@ -222,7 +221,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       toast({ 
         variant: "destructive", 
         title: "Erro no Chat", 
-        description: "O Vet AI não conseguiu responder no momento." 
+        description: "O Vet AI não conseguiu responder. Verifique sua conexão." 
       });
     } finally { setIsSending(false); }
   };
@@ -247,11 +246,11 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       });
 
       toast({
-        title: "Consulta Registrada",
-        description: `Uma solicitação de consulta para ${pet.name} foi adicionada ao prontuário.`,
+        title: "Consulta Agendada",
+        description: `Adicionada ao prontuário de ${pet.name} com sucesso.`,
       });
     } catch (e) {
-      toast({ variant: "destructive", title: "Erro no Agendamento", description: "Não foi possível registrar a consulta." });
+      toast({ variant: "destructive", title: "Erro no Prontuário", description: "Falha ao registrar consulta." });
     } finally {
       setBookingMessageId(null);
     }
@@ -278,7 +277,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
       try {
         const analysis = await analyzeImagePetHealth({ image: base64Image });
-        const analysisResponse = `[ANÁLISE VET AI]\n\nIDENTIFICAÇÃO: ${analysis.identification}\n\nANÁLISE: ${analysis.analysis}\n\nSUGESTÕES: ${analysis.suggestions}`;
+        const analysisResponse = `[LAUDO VET AI]\n\n${analysis.identification}\n\nANÁLISE: ${analysis.analysis}\n\nSUGESTÃO: ${analysis.suggestions}`;
         addDocumentNonBlocking(messagesRef, {
           role: 'model',
           content: analysisResponse,
@@ -287,7 +286,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           createdAt: new Date().toISOString(),
         });
       } catch (e: any) {
-        toast({ variant: "destructive", title: "Erro na Análise", description: "Falha ao processar imagem." });
+        toast({ variant: "destructive", title: "Erro na Análise", description: "Não conseguimos processar a imagem." });
       } finally { setIsSending(false); }
     };
     reader.readAsDataURL(file);
@@ -297,14 +296,14 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   const handleDeletePet = () => {
     if (!petRef) return;
     deleteDocumentNonBlocking(petRef);
-    toast({ title: "Pet Removido", description: "Perfil excluído com sucesso." });
+    toast({ title: "Paciente Removido", description: "Todos os dados foram excluídos." });
     router.push('/');
   };
 
   if (isUserLoading || isPetLoading || isMessagesLoading || isProfileLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
     );
   }
@@ -315,26 +314,26 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     <div className="flex flex-col h-screen bg-black overflow-hidden">
       <Navbar />
       <main className="flex-1 flex flex-col container mx-auto px-4 py-2 md:py-4 max-w-4xl overflow-hidden">
-        <div className="flex items-center justify-between mb-2 md:mb-4 pb-2 md:pb-4 border-b border-white/5">
+        <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
           <div className="flex items-center gap-2 md:gap-3">
-            <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/5 h-8 w-8 md:h-10 md:w-10">
-              <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/5 h-9 w-9">
+              <ArrowLeft className="w-5 h-5" />
             </Button>
-            <div className="relative w-8 h-8 md:w-10 md:h-10 rounded-full border border-primary/20 overflow-hidden">
+            <div className="relative w-10 h-10 rounded-full border border-primary/20 overflow-hidden shadow-lg">
               <Image src={pet.photoURL || `https://picsum.photos/seed/${pet.id}/400/400`} alt={pet.name} fill className="object-cover" />
             </div>
             <div>
-              <h2 className="text-xs md:text-sm font-bold premium-emerald-text truncate max-w-[80px] md:max-w-none">{pet.name}</h2>
-              <p className="text-[8px] md:text-[10px] text-muted-foreground uppercase tracking-widest">{pet.species} • {pet.breed || 'SRD'}</p>
+              <h2 className="text-sm font-bold premium-emerald-text truncate max-w-[120px] md:max-w-none">{pet.name}</h2>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">{pet.species} • {pet.breed || 'SRD'}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <Badge variant={isLimitReached ? "destructive" : "secondary"} className="h-6 md:h-8 px-2 md:px-3 bg-white/5 border-white/10 flex items-center gap-1.5 rounded-full">
-              <Zap className={`w-3 h-3 ${isLimitReached ? "text-white" : "text-primary"}`} />
-              <span className="text-[9px] md:text-[11px] font-bold tracking-tight">
+            <Badge variant={isLimitReached ? "destructive" : "secondary"} className="h-8 px-3 bg-white/5 border-white/10 flex items-center gap-1.5 rounded-full shadow-inner">
+              <Zap className={`w-3.5 h-3.5 ${isLimitReached ? "text-white" : "text-primary"}`} />
+              <span className="text-[11px] font-bold">
                 {userProfile?.subscriptionPlan === 'pro' ? (
-                  <div className="flex items-center gap-0.5"><Infinity className="w-3 h-3" /></div>
+                  <Infinity className="w-3.5 h-3.5" />
                 ) : (
                   `${usageCount}/${dailyLimitValue}`
                 )}
@@ -343,61 +342,61 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8 md:h-10 md:w-10">
-                  <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-9 w-9">
+                  <Trash2 className="w-5 h-5" />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="bg-card border-white/10 max-w-[90vw] md:max-w-lg rounded-2xl text-white">
+              <AlertDialogContent className="bg-card border-white/10 rounded-2xl text-white">
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="flex items-center gap-2 text-base md:text-lg">
-                    <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-destructive" />
-                    Excluir Pet?
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                    Confirmar Exclusão?
                   </AlertDialogTitle>
-                  <AlertDialogDescription className="text-muted-foreground text-xs md:text-sm">
-                    Esta ação é permanente. Todos os dados de <strong>{pet.name}</strong> serão removidos.
+                  <AlertDialogDescription className="text-muted-foreground">
+                    Esta ação removerá permanentemente o prontuário de <strong>{pet.name}</strong>.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter className="gap-2">
+                <AlertDialogFooter>
                   <AlertDialogCancel className="bg-white/5 border-white/10 text-white">Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeletePet} className="bg-destructive text-white">Excluir</AlertDialogAction>
+                  <AlertDialogAction onClick={handleDeletePet} className="bg-destructive text-white">Excluir Agora</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           </div>
         </div>
 
-        <ScrollArea className="flex-1 pr-2 md:pr-4">
-          <div className="space-y-4 md:space-y-6 py-2 md:py-4">
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-6 py-4">
             {sortedMessages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex gap-2 md:gap-3 max-w-[90%] md:max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary text-black' : 'bg-white/5 text-primary border border-white/10'}`}>
-                    {msg.role === 'user' ? <User className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Bot className="w-3.5 h-3.5 md:w-4 md:h-4" />}
+              <div key={msg.id || i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}>
+                <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-md ${msg.role === 'user' ? 'bg-primary text-black' : 'bg-white/5 text-primary border border-white/10'}`}>
+                    {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                   </div>
                   <div className="flex flex-col gap-2">
-                    <div className={`p-2.5 md:p-3 rounded-xl md:rounded-2xl text-[13px] md:text-sm ${msg.role === 'user' ? 'bg-primary/10 border border-primary/20' : 'bg-white/5 border border-white/10'}`}>
+                    <div className={`p-3.5 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-primary/10 border border-primary/20 text-white' : 'bg-white/5 border border-white/10 text-white/90 shadow-sm'}`}>
                       {msg.imageUrl && (
-                        <div className="relative w-full aspect-square mb-2 rounded-lg overflow-hidden border border-white/10">
-                          <Image src={msg.imageUrl} alt="Imagem" fill className="object-cover" />
+                        <div className="relative w-full aspect-square mb-3 rounded-xl overflow-hidden border border-white/10">
+                          <Image src={msg.imageUrl} alt="Anexo" fill className="object-cover" />
                         </div>
                       )}
-                      <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                      <div className="whitespace-pre-wrap">{msg.content}</div>
                     </div>
                     
                     {msg.consultationRecommended && msg.role === 'model' && (
-                      <div className="animate-in fade-in slide-in-from-top-2 duration-500">
+                      <div className="animate-in zoom-in-95 duration-300">
                         {msg.isConsultationBooked ? (
-                          <div className="w-full bg-secondary/30 border border-primary/20 text-primary py-2.5 px-4 rounded-xl flex items-center justify-center gap-2">
+                          <div className="w-full bg-primary/5 border border-primary/20 text-primary py-3 px-4 rounded-xl flex items-center justify-center gap-2">
                             <CheckCircle2 className="w-4 h-4" />
-                            <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider">Registrado no Prontuário</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Registrado no Prontuário</span>
                           </div>
                         ) : (
                           <Button 
                             onClick={() => handleScheduleConsultation(msg.id, msg.content.substring(0, 100))}
                             disabled={bookingMessageId === msg.id}
-                            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-black font-bold text-[10px] md:text-xs h-9 md:h-11 rounded-xl shadow-lg shadow-primary/10 gap-2"
+                            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-black font-bold text-xs h-11 rounded-xl shadow-lg shadow-primary/10 gap-2 border-none"
                           >
-                            {bookingMessageId === msg.id ? <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" /> : <CalendarDays className="w-3 h-3 md:w-4 md:h-4" />}
+                            {bookingMessageId === msg.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
                             Agendar Consulta no Prontuário
                           </Button>
                         )}
@@ -409,58 +408,60 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
             ))}
             
             {isLimitReached && (
-              <div className="mt-8 mb-4 px-2">
-                <Card className="border-primary/30 bg-primary/5 rounded-3xl overflow-hidden">
-                  <CardContent className="p-6 md:p-10 text-center space-y-4">
-                    <Crown className="w-10 h-10 text-primary mx-auto animate-pulse" />
-                    <h3 className="text-xl md:text-2xl font-bold">Acesso Elite Necessário</h3>
-                    <p className="text-muted-foreground text-xs md:text-sm">Você atingiu o limite diário de {dailyLimitValue} mensagens.</p>
-                    <Button className="w-full md:w-auto px-8 h-12 bg-primary text-black font-bold rounded-xl">Assinar Plano Elite</Button>
+              <div className="mt-10 mb-6 px-4 animate-in slide-in-from-bottom-10 duration-700">
+                <Card className="border-primary/30 bg-primary/5 rounded-[2.5rem] overflow-hidden backdrop-blur-sm">
+                  <CardContent className="p-8 md:p-12 text-center space-y-5">
+                    <Crown className="w-12 h-12 text-primary mx-auto animate-bounce" />
+                    <h3 className="text-2xl font-bold tracking-tight">Upgrade para Plano Elite</h3>
+                    <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">Você utilizou suas {dailyLimitValue} mensagens gratuitas de hoje. Libere acesso ilimitado agora.</p>
+                    <Button className="w-full md:w-auto px-10 h-14 bg-primary text-black font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-transform">Ser Membro Elite</Button>
                   </CardContent>
                 </Card>
               </div>
             )}
 
             {isSending && (
-              <div className="flex gap-2 items-center ml-9 md:ml-11">
-                <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                <span className="text-[9px] text-primary/70 font-bold uppercase tracking-widest">Vet AI analisando...</span>
+              <div className="flex gap-2 items-center ml-11">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                <span className="text-[10px] text-primary/70 font-bold uppercase tracking-[0.2em] animate-pulse">Vet AI analisando...</span>
               </div>
             )}
-            <div ref={scrollRef} />
+            <div ref={scrollRef} className="h-4" />
           </div>
         </ScrollArea>
 
         {!isLimitReached && (
-          <form onSubmit={handleSend} className="mt-2 md:mt-4 pb-2 md:pb-4 sticky bottom-0 bg-black">
-            <div className="flex items-center gap-1 md:gap-2 bg-white/5 border border-white/10 p-1.5 md:p-2 rounded-xl md:rounded-2xl">
+          <form onSubmit={handleSend} className="mt-4 pb-4 sticky bottom-0 bg-black pt-2">
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 p-2 rounded-2xl focus-within:border-primary/40 transition-all shadow-lg">
               <input type="file" ref={galleryInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
               <input type="file" ref={cameraInputRef} onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" />
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="ghost" size="icon" className="text-muted-foreground h-8 w-8 md:h-10 md:w-10 shrink-0"><Paperclip className="w-4 h-4 md:w-5 md:h-5" /></Button>
+                  <Button type="button" variant="ghost" size="icon" className="text-muted-foreground h-10 w-10 shrink-0 hover:text-primary hover:bg-primary/10 transition-colors">
+                    <Paperclip className="w-5 h-5" />
+                  </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-card border-white/10 text-white">
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => cameraInputRef.current?.click()}><Camera className="mr-2 h-4 w-4" /> Câmera</DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => galleryInputRef.current?.click()}><ImageIcon className="mr-2 h-4 w-4" /> Galeria</DropdownMenuItem>
+                <DropdownMenuContent className="bg-card border-white/10 text-white rounded-xl mb-2">
+                  <DropdownMenuItem className="cursor-pointer py-3" onClick={() => cameraInputRef.current?.click()}><Camera className="mr-3 h-4.5 w-4.5" /> Câmera</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer py-3" onClick={() => galleryInputRef.current?.click()}><ImageIcon className="mr-3 h-4.5 w-4.5" /> Galeria</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
               <Input 
                 value={input} 
                 onChange={(e) => setInput(e.target.value)} 
-                placeholder="Diga algo ao Vet AI..."
-                className="bg-transparent border-none focus-visible:ring-0 text-[13px] md:text-sm h-8 md:h-10 px-1 md:px-3 text-white" 
+                placeholder="Descreva o sintoma ou dieta..."
+                className="bg-transparent border-none focus-visible:ring-0 text-sm h-10 px-2 text-white placeholder:text-muted-foreground/50" 
                 disabled={isSending} 
               />
               <Button 
                 type="submit" 
                 size="icon" 
-                className="bg-primary text-black rounded-lg md:rounded-xl h-8 w-8 md:h-10 md:w-10 shrink-0" 
+                className="bg-primary text-black rounded-xl h-10 w-10 shrink-0 shadow-md shadow-primary/10 active:scale-90 transition-transform" 
                 disabled={isSending || !input.trim()}
               >
-                <Send className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                <Send className="w-4.5 h-4.5" />
               </Button>
             </div>
           </form>

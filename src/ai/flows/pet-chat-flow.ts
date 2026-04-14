@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Fluxo de chat com memória de prontuário.
+ * @fileOverview Fluxo de chat com memória de prontuário e detecção de melhora.
  * O Vet AI agora monitora consultas pendentes e sugere o fechamento quando o pet melhora.
  */
 
@@ -28,7 +28,7 @@ const PetChatInputSchema = z.object({
 
 const PetChatOutputSchema = z.object({
   response: z.string(),
-  recommendConsultation: z.boolean().describe('Verdadeiro se for necessária uma nova consulta.'),
+  recommendConsultation: z.boolean().describe('Verdadeiro se for necessária uma nova consulta profissional.'),
   resolvedConsultationId: z.string().optional().describe('O ID da consulta pendente que deve ser marcada como concluída porque o pet melhorou.'),
 });
 
@@ -47,23 +47,23 @@ const petChatFlow = ai.defineFlow(
         pendingConsultations.map(c => `- ID: ${c.id}, Motivo: ${c.reason}`).join('\n');
     }
 
-    const systemPrompt = `Você é o Vet AI Elite da WS Studios.
+    const systemPrompt = `Você é o Vet AI Elite, assistente veterinário inteligente.
     
-    DADOS DO PACIENTE:
+    DADOS DO PACIENTE ATUAL:
     - Nome: ${petInfo.name}
     - Espécie: ${petInfo.species}
     - Raça: ${petInfo.breed || 'SRD'}
     - Idade: ${petInfo.age || 0} anos
     ${pendingContext}
 
-    DIRETRIZES:
-    1. Se o usuário disser que o pet "está melhor", "melhorou", "não tem mais nada" ou relatos similares sobre um sintoma que está na lista de PENDENTES, você deve identificar o ID correspondente e definir 'resolvedConsultationId' com esse ID.
-    2. RECOMENDAÇÃO DE CONSULTA: Defina 'recommendConsultation' como TRUE se detectar novos sintomas graves.
-    3. Se a mensagem for "SAUDACAO_INICIAL_TRIGGER", apresente-se mencionando os dados do pet. Se houver algo PENDENTE, pergunte como o pet está evoluindo em relação a esse problema específico.
-    4. Limite suas respostas a no máximo 6 frases.
-    5. Idioma: PT-BR.`;
+    SUAS DIRETRIZES:
+    1. MONITORAMENTO DE MELHORA: Se o usuário relatar que o pet "está melhor", "curou", "parou de ter o sintoma" ou algo similar sobre um item na lista de PENDENTES, identifique o ID correspondente e defina 'resolvedConsultationId' com esse ID para que possamos fechar o registro no prontuário.
+    2. RECOMENDAÇÃO DE CONSULTA: Defina 'recommendConsultation' como TRUE apenas se detectar sintomas graves ou necessidade de exame físico imediato.
+    3. SAUDAÇÃO: Se a mensagem for "SAUDACAO_INICIAL_TRIGGER", apresente-se amigavelmente mencionando o nome do pet. Se houver algo PENDENTE, pergunte como o pet está evoluindo especificamente sobre aquele problema.
+    4. Limite suas respostas a no máximo 6 frases curtas e objetivas.
+    5. Idioma: Português Brasileiro (PT-BR).`;
 
-    const chatMessages = history.map(h => ({ 
+    const chatMessages = (history || []).map(h => ({ 
       role: h.role === 'model' ? 'model' as const : 'user' as const, 
       content: [{ text: h.content }] 
     }));
@@ -84,7 +84,7 @@ const petChatFlow = ai.defineFlow(
     });
 
     return output || { 
-      response: "Erro na análise.",
+      response: "Desculpe, tive um erro na análise técnica.",
       recommendConsultation: false
     };
   }
