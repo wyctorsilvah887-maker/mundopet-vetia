@@ -1,13 +1,15 @@
-# Guia de Integração: Compartilhamento de Projeto (Shared Project)
+# Guia de Integração Passo a Passo (Projeto A -> Projeto B)
 
-Este documento descreve como integrar um novo projeto (Projeto A) ao backend deste projeto (Projeto B), permitindo que ambos compartilhem os mesmos dados e usuários.
+Este guia explica como conectar um novo aplicativo (Projeto A) ao backend deste projeto atual (Projeto B) para que ambos compartilhem os mesmos dados e usuários de forma transparente.
 
-## 1. Configuração do Firebase (Copiar para o Projeto A)
+## Você precisa criar um novo backend no Projeto A?
+**Não.** Você vai reutilizar o backend (Firestore, Auth e Storage) que já existe no Projeto B. O Firebase permite que múltiplos aplicativos se conectem à mesma infraestrutura.
 
-O Projeto A deve inicializar o Firebase com as seguintes credenciais para acessar o mesmo banco de dados:
+## Passo 1: Obter as Credenciais do Projeto B
+No código deste projeto (Projeto B), localize o arquivo `src/firebase/config.ts`. Você precisará exatamente destas informações:
 
 ```typescript
-// src/firebase/config.ts (No Projeto A)
+// src/firebase/config.ts (Valores deste projeto)
 export const firebaseConfig = {
   "projectId": "studio-6276490711-dfc3e",
   "appId": "1:1053755044344:web:468b8ec4cc1bf6aee0a60d",
@@ -18,24 +20,23 @@ export const firebaseConfig = {
 };
 ```
 
-## 2. Estrutura de Dados Compartilhada
+## Passo 2: Configurar o código no Projeto A
+Abra o código do seu **Projeto A**. Procure o local onde o Firebase é inicializado e substitua a configuração antiga (ou adicione esta se for um projeto novo). 
 
-Para que os dados apareçam em ambos os projetos, utilize os seguintes caminhos de coleção no Firestore:
+Ao fazer isso, o Projeto A passará a ler e gravar no mesmo banco de dados do Projeto B.
 
-- **Perfis de Usuário**: `users/{userId}`
-- **Lista de Pets**: `users/{userId}/pets`
-- **Mensagens do Chat**: `users/{userId}/pets/{petId}/chatMessages`
-- **Resultados de Análise**: `users/{userId}/analysisResults`
+## Passo 3: Utilizar as mesmas Coleções
+Para que os dados apareçam em ambos os apps, você deve usar os caminhos de coleção idênticos no Projeto A:
 
-## 3. Autenticação
+1. **Perfis de Usuário**: `users/{userId}`
+2. **Lista de Pets**: `users/{userId}/pets`
+3. **Histórico de Chat**: `users/{userId}/pets/{petId}/chatMessages`
+4. **Resultados de IA**: `users/{userId}/analysisResults`
 
-Como os projetos compartilham o mesmo **Auth Domain**, a base de usuários é única.
-- Se o usuário `exemplo@email.com` se cadastrar no Projeto A, ele poderá fazer login no Projeto B imediatamente.
-- O `uid` do usuário será o mesmo em ambos os aplicativos, permitindo que as regras de segurança `isOwner(userId)` funcionem corretamente.
-
-## 4. Regras de Segurança e Storage
-
-As Security Rules do Firestore e as regras do Storage aplicadas neste projeto são globais. Qualquer alteração feita aqui afetará como o Projeto A lê ou escreve dados.
+## Passo 4: Testar a Autenticação
+Como os projetos compartilham o mesmo `authDomain`, os usuários são os mesmos.
+- Se você se cadastrar no Projeto A, poderá fazer login no Projeto B com a mesma senha.
+- O ID do usuário (`uid`) será o mesmo, o que permite que as regras de segurança funcionem perfeitamente em ambos os apps.
 
 ---
-**Nota:** Certifique-se de que o domínio onde o Projeto A será hospedado esteja na lista de "Domínios Autorizados" no console do Firebase (Auth > Settings > Authorized Domains).
+**Nota Importante:** Se o Projeto A for hospedado em um novo domínio (ex: `meu-projeto-a.com`), você deve adicionar este domínio na lista de "Domínios Autorizados" no Console do Firebase em: *Autenticação > Configurações > Domínios Autorizados*.
