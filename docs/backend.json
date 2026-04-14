@@ -12,6 +12,7 @@
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
         "photoURL": { "type": "string", "format": "uri" },
+        "subscriptionPlan": { "type": "string", "enum": ["free", "premium", "pro"], "description": "Nível de assinatura do usuário." },
         "dailyUsageCount": { "type": "number", "description": "Contador de mensagens enviadas no dia atual." },
         "lastUsageDate": { "type": "string", "description": "Data da última interação para reset diário (YYYY-MM-DD)." },
         "createdAt": { "type": "string", "format": "date-time" },

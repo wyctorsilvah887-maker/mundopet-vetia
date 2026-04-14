@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,8 +13,6 @@ import { collection, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-
-const MAX_DAILY_MESSAGES = 6;
 
 export function ImageAnalysisForm() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -36,7 +34,15 @@ export function ImageAnalysisForm() {
 
   const today = new Date().toISOString().split('T')[0];
   const usageCount = userProfile?.lastUsageDate === today ? (userProfile?.dailyUsageCount || 0) : 0;
-  const isLimitReached = usageCount >= MAX_DAILY_MESSAGES;
+  
+  const getDailyLimit = (plan?: string) => {
+    if (plan === 'pro') return 999999;
+    if (plan === 'premium') return 30;
+    return 6;
+  };
+  
+  const dailyLimitValue = getDailyLimit(userProfile?.subscriptionPlan);
+  const isLimitReached = usageCount >= dailyLimitValue && userProfile?.subscriptionPlan !== 'pro';
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,14 +125,14 @@ export function ImageAnalysisForm() {
               Limite de <span className="premium-emerald-text">Análise</span> Atingido
             </h3>
             <p className="text-muted-foreground text-base leading-relaxed max-sm mx-auto">
-              Seu acesso gratuito de {MAX_DAILY_MESSAGES} usos diários foi esgotado. Desbloqueie agora o Plano Elite.
+              Seu acesso de {dailyLimitValue} usos diários foi esgotado. Desbloqueie agora o nível superior.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left max-w-md mx-auto py-4">
             <div className="flex items-center gap-2 text-xs text-white/80">
               <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-              Análises de imagem ilimitadas
+              Análises de imagem ampliadas
             </div>
             <div className="flex items-center gap-2 text-xs text-white/80">
               <CheckCircle className="w-4 h-4 text-primary shrink-0" />
@@ -146,11 +152,11 @@ export function ImageAnalysisForm() {
             onClick={handleSubscribeClick}
             className="w-full md:w-auto px-12 h-14 text-lg font-bold bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/20 transition-all rounded-2xl"
           >
-            Assinar Plano Elite Agora
+            Fazer Upgrade do Plano
           </Button>
           
           <p className="text-[10px] text-muted-foreground/60 uppercase tracking-widest">
-            Acesso imediato após confirmação • Reset diário bloqueado
+            Acesso imediato após confirmação • Reset diário automático
           </p>
         </CardContent>
       </Card>
@@ -170,7 +176,7 @@ export function ImageAnalysisForm() {
             </div>
             <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/20">
               <Zap className="w-3 h-3 mr-1" />
-              {usageCount}/{MAX_DAILY_MESSAGES}
+              {userProfile?.subscriptionPlan === 'pro' ? 'Ilimitado' : `${usageCount}/${dailyLimitValue}`}
             </Badge>
           </div>
         </CardHeader>

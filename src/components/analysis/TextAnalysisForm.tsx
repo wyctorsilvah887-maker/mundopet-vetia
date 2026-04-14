@@ -13,8 +13,6 @@ import { collection, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 
-const MAX_DAILY_MESSAGES = 6;
-
 export function TextAnalysisForm() {
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,7 +31,15 @@ export function TextAnalysisForm() {
 
   const today = new Date().toISOString().split('T')[0];
   const usageCount = userProfile?.lastUsageDate === today ? (userProfile?.dailyUsageCount || 0) : 0;
-  const isLimitReached = usageCount >= MAX_DAILY_MESSAGES;
+  
+  const getDailyLimit = (plan?: string) => {
+    if (plan === 'pro') return 999999;
+    if (plan === 'premium') return 30;
+    return 6;
+  };
+  
+  const dailyLimitValue = getDailyLimit(userProfile?.subscriptionPlan);
+  const isLimitReached = usageCount >= dailyLimitValue && userProfile?.subscriptionPlan !== 'pro';
 
   const incrementUsage = () => {
     if (!userRef) return;
@@ -104,14 +110,14 @@ export function TextAnalysisForm() {
               Alcance o <span className="premium-emerald-text">Nível Elite</span>
             </h3>
             <p className="text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">
-              Seu limite de {MAX_DAILY_MESSAGES} análises gratuitas foi atingido. Desbloqueie o acesso premium agora.
+              Seu limite de {dailyLimitValue} análises diárias foi atingido. Desbloqueie o acesso premium agora.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left max-w-md mx-auto py-4">
             <div className="flex items-center gap-2 text-xs text-white/80">
               <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-              Análises de texto ilimitadas
+              Análises de texto ampliadas
             </div>
             <div className="flex items-center gap-2 text-xs text-white/80">
               <CheckCircle className="w-4 h-4 text-primary shrink-0" />
@@ -155,7 +161,7 @@ export function TextAnalysisForm() {
             </div>
             <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/20">
               <Zap className="w-3 h-3 mr-1" />
-              {usageCount}/{MAX_DAILY_MESSAGES}
+              {userProfile?.subscriptionPlan === 'pro' ? 'Ilimitado' : `${usageCount}/${dailyLimitValue}`}
             </Badge>
           </div>
         </CardHeader>

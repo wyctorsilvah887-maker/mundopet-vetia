@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, use } from 'react';
@@ -9,7 +10,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@
 import { doc, collection, query, orderBy, limit, where } from 'firebase/firestore';
 import { petChat } from '@/ai/flows/pet-chat-flow';
 import { analyzeImagePetHealth } from '@/ai/flows/analyze-image-pet-health-flow';
-import { Loader2, Send, ArrowLeft, Bot, User, Paperclip, Camera, Image as ImageIcon, Trash2, AlertTriangle, Zap, Crown, CalendarDays, CheckCircle2 } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Bot, User, Paperclip, Camera, Image as ImageIcon, Trash2, AlertTriangle, Zap, Crown, CalendarDays, CheckCircle2, Infinity } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Image from 'next/image';
@@ -32,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertDialogTrigger } from '@radix-ui/react-alert-dialog';
+import { AlertDialogTrigger } from '@radix-ui/react-dialog';
 
 interface Message {
   id: string;
@@ -51,7 +52,6 @@ interface Consultation {
   createdAt: string;
 }
 
-const MAX_DAILY_MESSAGES = 6;
 const INITIAL_MESSAGE_LIMIT = 15;
 
 export default function PetChatPage({ params }: { params: Promise<{ petId: string }> }) {
@@ -86,7 +86,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
   const { data: pet, isLoading: isPetLoading } = useDoc(petRef);
 
-  // Busca consultas PENDENTES para dar contexto à IA
   const pendingConsultationsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
     return query(
@@ -114,7 +113,16 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
   const today = new Date().toISOString().split('T')[0];
   const usageCount = userProfile?.lastUsageDate === today ? (userProfile?.dailyUsageCount || 0) : 0;
-  const isLimitReached = usageCount >= MAX_DAILY_MESSAGES;
+  
+  // Lógica de limites baseada no plano
+  const getDailyLimit = (plan?: string) => {
+    if (plan === 'pro') return 999999;
+    if (plan === 'premium') return 30;
+    return 6;
+  };
+  
+  const dailyLimitValue = getDailyLimit(userProfile?.subscriptionPlan);
+  const isLimitReached = usageCount >= dailyLimitValue && userProfile?.subscriptionPlan !== 'pro';
 
   useEffect(() => {
     if (!isUserLoading && !user) router.push('/login');
@@ -202,7 +210,6 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           createdAt: new Date().toISOString(),
         });
 
-        // Se a IA resolveu uma consulta pendente
         if (result.resolvedConsultationId) {
           const consultRef = doc(firestore, 'users', user.uid, 'pets', petId, 'consultations', result.resolvedConsultationId);
           updateDocumentNonBlocking(consultRef, { status: 'completed' });
@@ -326,7 +333,13 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           <div className="flex items-center gap-2 md:gap-4">
             <Badge variant={isLimitReached ? "destructive" : "secondary"} className="h-6 md:h-8 px-2 md:px-3 bg-white/5 border-white/10 flex items-center gap-1.5 rounded-full">
               <Zap className={`w-3 h-3 ${isLimitReached ? "text-white" : "text-primary"}`} />
-              <span className="text-[9px] md:text-[11px] font-bold tracking-tight">{usageCount}/{MAX_DAILY_MESSAGES}</span>
+              <span className="text-[9px] md:text-[11px] font-bold tracking-tight">
+                {userProfile?.subscriptionPlan === 'pro' ? (
+                  <div className="flex items-center gap-0.5"><Infinity className="w-3 h-3" /></div>
+                ) : (
+                  `${usageCount}/${dailyLimitValue}`
+                )}
+              </span>
             </Badge>
 
             <AlertDialog>
@@ -402,7 +415,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                   <CardContent className="p-6 md:p-10 text-center space-y-4">
                     <Crown className="w-10 h-10 text-primary mx-auto animate-pulse" />
                     <h3 className="text-xl md:text-2xl font-bold">Acesso Elite Necessário</h3>
-                    <p className="text-muted-foreground text-xs md:text-sm">Você atingiu o limite diário de {MAX_DAILY_MESSAGES} mensagens.</p>
+                    <p className="text-muted-foreground text-xs md:text-sm">Você atingiu o limite diário de {dailyLimitValue} mensagens.</p>
                     <Button className="w-full md:w-auto px-8 h-12 bg-primary text-black font-bold rounded-xl">Assinar Plano Elite</Button>
                   </CardContent>
                 </Card>
