@@ -14,10 +14,10 @@ export default function Home() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  // Redirecionamento imediato se não houver usuário logado
+  // Redirecionamento INSTANTÂNEO para login se não houver usuário
   useEffect(() => {
     if (!isUserLoading && !user) {
-      router.push('/login');
+      router.replace('/login');
     }
   }, [user, isUserLoading, router]);
 
@@ -28,7 +28,8 @@ export default function Home() {
 
   const { data: pets, isLoading: isPetsLoading } = useCollection(petsQuery);
 
-  if (isUserLoading || (!user && !isUserLoading)) {
+  // Enquanto verifica o usuário ou redireciona, mostra apenas o loader elegante
+  if (isUserLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
         <div className="flex flex-col items-center gap-4">
@@ -39,7 +40,7 @@ export default function Home() {
     );
   }
 
-  // Dashboard para usuários logados
+  // Dashboard visível apenas para usuários autenticados
   return (
     <div className="flex flex-col min-h-screen bg-black text-white selection:bg-primary selection:text-black">
       <Navbar />
