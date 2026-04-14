@@ -9,8 +9,16 @@
     ],
     "rewrites": [
       {
-        "source": "**",
-        "destination": "/index.html"
+        "source": "/login",
+        "destination": "/login"
+      },
+      {
+        "source": "/cadastrar-pet",
+        "destination": "/cadastrar-pet"
+      },
+      {
+        "source": "/pet/**",
+        "destination": "/pet"
       }
     ]
   }
