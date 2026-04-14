@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
-import { ShieldCheck, Zap, HeartPulse, Loader2, PlusCircle, ChevronRight } from 'lucide-react';
+import { ShieldCheck, Zap, HeartPulse, Loader2, ChevronRight, Dog } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit } from 'firebase/firestore';
 import Link from 'next/link';
@@ -14,7 +15,6 @@ export default function Home() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  // Redirecionamento INSTANTÂNEO para login se não houver usuário
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace('/login');
@@ -28,7 +28,6 @@ export default function Home() {
 
   const { data: pets, isLoading: isPetsLoading } = useCollection(petsQuery);
 
-  // Enquanto verifica o usuário ou redireciona, mostra apenas o loader elegante
   if (isUserLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
@@ -40,7 +39,6 @@ export default function Home() {
     );
   }
 
-  // Dashboard visível apenas para usuários autenticados
   return (
     <div className="flex flex-col min-h-screen bg-black text-white selection:bg-primary selection:text-black">
       <Navbar />
@@ -54,12 +52,16 @@ export default function Home() {
             Gestão de <span className="premium-emerald-text">Pacientes</span>
           </h1>
           <p className="text-muted-foreground mt-4 text-sm md:text-lg max-w-xl mx-auto">
-            Bem-vindo ao centro de comando Vet AI. Gerencie a saúde e nutrição de seus pets com precisão cirúrgica.
+            Bem-vindo ao centro de comando Vet AI. Visualize a saúde e nutrição de seus pacientes ativos.
           </p>
         </div>
 
         <section className="max-w-5xl mx-auto mb-20">
-          {pets && pets.length > 0 ? (
+          {isPetsLoading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : pets && pets.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
               {pets.map((pet) => (
                 <Link key={pet.id} href={`/pet/${pet.id}/chat`} className="group">
@@ -82,26 +84,14 @@ export default function Home() {
                   </div>
                 </Link>
               ))}
-              
-              <Link href="/cadastrar-pet" className="group">
-                <div className="h-full bg-transparent border-2 border-dashed border-white/10 rounded-[2rem] p-6 flex flex-col items-center justify-center text-center min-h-[200px] hover:border-primary/40 transition-colors">
-                  <PlusCircle className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors mb-3" />
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold group-hover:text-white">Adicionar Pet</span>
-                </div>
-              </Link>
             </div>
           ) : (
             <div className="max-w-2xl mx-auto text-center py-20 bg-white/5 border border-white/10 rounded-[2.5rem]">
               <div className="bg-primary/20 p-6 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                <PlusCircle className="w-10 h-10 text-primary" />
+                <Dog className="w-10 h-10 text-primary" />
               </div>
-              <h2 className="text-2xl font-bold mb-4">Nenhum pet cadastrado</h2>
-              <p className="text-muted-foreground mb-8">Comece agora cadastrando seu primeiro companheiro.</p>
-              <Link href="/cadastrar-pet">
-                <button className="bg-primary text-black px-8 py-3 rounded-xl font-bold hover:bg-primary/90 transition-all">
-                  Cadastrar Pet
-                </button>
-              </Link>
+              <h2 className="text-2xl font-bold mb-4">Nenhum paciente ativo</h2>
+              <p className="text-muted-foreground mb-8">Não existem animais vinculados ao seu perfil no momento.</p>
             </div>
           )}
         </section>
