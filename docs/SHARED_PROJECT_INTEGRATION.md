@@ -1,23 +1,23 @@
-
 # Guia de Microsserviço: Vet AI (Modo Independente)
 
 Este guia explica como o **Vet AI** está configurado agora que possui seu próprio banco de dados e infraestrutura.
 
 ## Estrutura Atual
-O projeto funciona de forma 100% autônoma, sem depender das credenciais diretas do aplicativo Mundo Pet principal, evitando conflitos de domínio.
+O projeto funciona de forma 100% autônoma, evitando conflitos com o Mundo Pet principal.
 
-## Como Publicar (Baseado no seu Console)
-Para enviar as atualizações para o endereço `vet-ia.web.app`:
+## Como Resolver o Erro "Página não encontrada" (404)
+Se você vir a tela de erro do Firebase ao acessar `vet-ia.web.app`, siga estes passos:
 
-1. Certifique-se de que o `firebase.json` possui o atributo `"site": "vet-ia"`.
-2. No terminal, execute o comando:
-   ```bash
-   firebase deploy --only hosting:vet-ia
-   ```
-   *Ou clique no botão "Publicar" no Firebase Studio.*
+1. **Publique o Projeto**: Clique no botão azul **"Publicar"** no Firebase Studio para enviar o novo arquivo `index.html`.
+2. **Conecte o Backend no Console**:
+   - Vá ao [Console do Firebase](https://console.firebase.google.com/).
+   - Clique em **App Hosting** no menu lateral.
+   - Selecione o backend `analisapet-ai`.
+   - Clique na aba **Configurações**.
+   - Em **Domínios**, certifique-se de que o domínio `vet-ia.web.app` está conectado a este backend.
 
 ## Segurança de Domínio
-Como especificamos o site no arquivo de configuração, o Firebase nunca tentará publicar este código no seu domínio principal (`mundopet-wsstudios.online`), garantindo a integridade do seu site principal.
+O arquivo `firebase.json` está travado no site `vet-ia`. Isso garante que suas atualizações nunca afetem o domínio principal `mundopet-wsstudios.online`.
 
 ---
-**Status:** Integração independente concluída com sucesso.
+**Status:** Configuração de correção de 404 aplicada.
