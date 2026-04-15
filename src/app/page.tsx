@@ -52,7 +52,7 @@ export default function Home() {
             Gestão de <span className="premium-emerald-text">pets Vet IA</span>
           </h1>
           <p className="text-muted-foreground mt-4 text-sm md:text-lg max-w-xl mx-auto">
-            Bem-vindo ao centro de comando Vet AI. Visualize a saúde e nutrição de seus pacientes ativos.
+            Bem-vindo ao centro de comando Vet AI. Converse, tire dúvidas e aprenda com a Vet AI.
           </p>
         </div>
 
