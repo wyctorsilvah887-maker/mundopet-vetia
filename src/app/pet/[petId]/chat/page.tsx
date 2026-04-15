@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, use } from 'react';
@@ -51,7 +52,7 @@ interface Consultation {
   createdAt: string;
 }
 
-const INITIAL_MESSAGE_LIMIT = 20;
+const INITIAL_MESSAGE_LIMIT = 30;
 
 export default function PetChatPage({ params }: { params: Promise<{ petId: string }> }) {
   const { petId } = use(params);
@@ -194,7 +195,11 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
     try {
       const result = await petChat({
         petInfo: { name: pet.name, species: pet.species, breed: pet.breed, age: pet.age },
-        pendingConsultations: pendingConsultations?.map(c => ({ id: c.id, reason: c.reason, createdAt: c.createdAt })),
+        pendingConsultations: pendingConsultations?.map(c => ({ 
+          id: c.id, 
+          reason: c.reason, 
+          createdAt: c.createdAt 
+        })),
         message: userMessage,
         history: sortedMessages.map(m => ({ role: m.role, content: m.content })),
       });
@@ -221,7 +226,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       toast({ 
         variant: "destructive", 
         title: "Erro no Chat", 
-        description: "O Vet AI não conseguiu responder. Verifique sua conexão." 
+        description: "O Vet AI não conseguiu responder no momento. Verifique sua conexão." 
       });
     } finally { setIsSending(false); }
   };
@@ -246,11 +251,11 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       });
 
       toast({
-        title: "Consulta Agendada",
-        description: `Adicionada ao prontuário de ${pet.name} com sucesso.`,
+        title: "Consulta Registrada",
+        description: `Adicionada ao prontuário de ${pet.name}.`,
       });
     } catch (e) {
-      toast({ variant: "destructive", title: "Erro no Prontuário", description: "Falha ao registrar consulta." });
+      toast({ variant: "destructive", title: "Erro no Registro", description: "Falha ao atualizar prontuário." });
     } finally {
       setBookingMessageId(null);
     }
@@ -270,14 +275,14 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
       addDocumentNonBlocking(messagesRef, {
         role: 'user',
-        content: "[Imagem anexada]",
+        content: "[Imagem enviada para análise]",
         imageUrl: base64Image,
         createdAt: new Date().toISOString(),
       });
 
       try {
         const analysis = await analyzeImagePetHealth({ image: base64Image });
-        const analysisResponse = `[LAUDO VET AI]\n\n${analysis.identification}\n\nANÁLISE: ${analysis.analysis}\n\nSUGESTÃO: ${analysis.suggestions}`;
+        const analysisResponse = `[ANÁLISE DE IMAGEM VET AI]\n\n${analysis.identification}\n\nRESULTADO: ${analysis.analysis}\n\nCONDUTA: ${analysis.suggestions}`;
         addDocumentNonBlocking(messagesRef, {
           role: 'model',
           content: analysisResponse,
@@ -286,7 +291,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
           createdAt: new Date().toISOString(),
         });
       } catch (e: any) {
-        toast({ variant: "destructive", title: "Erro na Análise", description: "Não conseguimos processar a imagem." });
+        toast({ variant: "destructive", title: "Erro na Análise", description: "Falha ao processar imagem." });
       } finally { setIsSending(false); }
     };
     reader.readAsDataURL(file);
@@ -296,7 +301,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
   const handleDeletePet = () => {
     if (!petRef) return;
     deleteDocumentNonBlocking(petRef);
-    toast({ title: "Paciente Removido", description: "Todos os dados foram excluídos." });
+    toast({ title: "Paciente Excluído", description: "Todos os dados foram removidos." });
     router.push('/');
   };
 
@@ -350,15 +355,15 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                 <AlertDialogHeader>
                   <AlertDialogTitle className="flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-destructive" />
-                    Confirmar Exclusão?
+                    Excluir Paciente?
                   </AlertDialogTitle>
                   <AlertDialogDescription className="text-muted-foreground">
-                    Esta ação removerá permanentemente o prontuário de <strong>{pet.name}</strong>.
+                    Esta ação é irreversível. O prontuário de <strong>{pet.name}</strong> e todo o histórico de chat serão removidos.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel className="bg-white/5 border-white/10 text-white">Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeletePet} className="bg-destructive text-white">Excluir Agora</AlertDialogAction>
+                  <AlertDialogAction onClick={handleDeletePet} className="bg-destructive text-white">Excluir</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -388,7 +393,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                         {msg.isConsultationBooked ? (
                           <div className="w-full bg-primary/5 border border-primary/20 text-primary py-3 px-4 rounded-xl flex items-center justify-center gap-2">
                             <CheckCircle2 className="w-4 h-4" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Registrado no Prontuário</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Consulta Registrada</span>
                           </div>
                         ) : (
                           <Button 
@@ -397,7 +402,7 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                             className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-black font-bold text-xs h-11 rounded-xl shadow-lg shadow-primary/10 gap-2 border-none"
                           >
                             {bookingMessageId === msg.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
-                            Agendar Consulta no Prontuário
+                            Registrar Consulta no Prontuário
                           </Button>
                         )}
                       </div>
@@ -412,9 +417,9 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
                 <Card className="border-primary/30 bg-primary/5 rounded-[2.5rem] overflow-hidden backdrop-blur-sm">
                   <CardContent className="p-8 md:p-12 text-center space-y-5">
                     <Crown className="w-12 h-12 text-primary mx-auto animate-bounce" />
-                    <h3 className="text-2xl font-bold tracking-tight">Upgrade para Plano Elite</h3>
-                    <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">Você utilizou suas {dailyLimitValue} mensagens gratuitas de hoje. Libere acesso ilimitado agora.</p>
-                    <Button className="w-full md:w-auto px-10 h-14 bg-primary text-black font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-transform">Ser Membro Elite</Button>
+                    <h3 className="text-2xl font-bold tracking-tight">Limite Diário Atingido</h3>
+                    <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">Você utilizou suas {dailyLimitValue} mensagens de hoje. Faça o upgrade para o plano Pro e tenha acesso ilimitado.</p>
+                    <Button className="w-full md:w-auto px-10 h-14 bg-primary text-black font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-transform">Ver Planos Elite</Button>
                   </CardContent>
                 </Card>
               </div>
