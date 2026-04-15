@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview Fluxo de chat com memória de prontuário e detecção de melhora.
- * O Vet AI agora monitora consultas pendentes e sugere o fechamento quando o pet melhora.
+ * O Vet AI monitora consultas pendentes e sugere o fechamento quando o pet melhora.
  */
 
 import { ai } from '@/ai/genkit';
@@ -89,7 +89,6 @@ const petChatFlow = ai.defineFlow(
         recommendConsultation: false
       };
     } catch (error) {
-      console.error("Genkit Flow Error:", error);
       return {
         response: "Ocorreu uma instabilidade na conexão com os modelos de IA. Por favor, tente novamente em instantes.",
         recommendConsultation: false
