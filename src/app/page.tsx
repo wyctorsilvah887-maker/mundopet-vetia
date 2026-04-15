@@ -103,7 +103,7 @@ export default function Home() {
                 <Zap className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold tracking-tight">IA de Resposta Rápida</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">Nossos modelos Gemini 2.5 garantem análises instantâneas para qualquer sintoma ou dieta.</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">Nossos modelos WS AI 1.5 flash garantem análises instantâneas para qualquer sintoma ou dieta.</p>
             </div>
             <div className="text-center md:text-left space-y-4">
               <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto md:mx-0 text-primary">
