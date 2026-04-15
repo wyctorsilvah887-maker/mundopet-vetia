@@ -33,7 +33,7 @@ export default function Home() {
       <div className="flex min-h-screen items-center justify-center bg-black">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-primary" />
-          <p className="text-primary text-[10px] font-bold tracking-[0.3em] uppercase animate-pulse">Sincronizando Vet AI...</p>
+          <p className="text-primary text-[10px] font-bold tracking-[0.3em] uppercase animate-pulse">Sincronizando Vet IA...</p>
         </div>
       </div>
     );
@@ -49,7 +49,7 @@ export default function Home() {
             Painel de Monitoramento
           </div>
           <h1 className="text-4xl md:text-6xl font-headline font-black text-white tracking-tighter leading-tight">
-            Gestão de <span className="premium-emerald-text">Pacientes</span>
+            Gestão de <span className="premium-emerald-text">pets Vet IA</span>
           </h1>
           <p className="text-muted-foreground mt-4 text-sm md:text-lg max-w-xl mx-auto">
             Bem-vindo ao centro de comando Vet AI. Visualize a saúde e nutrição de seus pacientes ativos.
