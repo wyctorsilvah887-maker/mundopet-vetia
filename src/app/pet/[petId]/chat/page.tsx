@@ -10,13 +10,12 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@
 import { doc, collection, query, orderBy, limit, where } from 'firebase/firestore';
 import { petChat } from '@/ai/flows/pet-chat-flow';
 import { analyzeImagePetHealth } from '@/ai/flows/analyze-image-pet-health-flow';
-import { Loader2, Send, ArrowLeft, Bot, User, Paperclip, Camera, Image as ImageIcon, Trash2, AlertTriangle, Zap, Crown, CalendarDays, CheckCircle2, Infinity } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Bot, User, Paperclip, Camera, Image as ImageIcon, Trash2, AlertTriangle, Zap, Crown, CalendarDays, CheckCircle2, Infinity, History } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,7 +51,7 @@ interface Consultation {
   createdAt: string;
 }
 
-const INITIAL_MESSAGE_LIMIT = 30;
+const INITIAL_MESSAGE_LIMIT = 6;
 
 export default function PetChatPage({ params }: { params: Promise<{ petId: string }> }) {
   const { petId } = use(params);
@@ -174,6 +173,10 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
       lastUsageDate: today,
       updatedAt: new Date().toISOString()
     });
+  };
+
+  const handleLoadMore = () => {
+    setMessageLimit(prev => prev + 6);
   };
 
   const handleSend = async (e?: React.FormEvent) => {
@@ -315,6 +318,8 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
   if (!pet) return null;
 
+  const hasMoreMessages = firestoreMessages && firestoreMessages.length >= messageLimit;
+
   return (
     <div className="flex flex-col h-screen bg-black overflow-hidden">
       <Navbar />
@@ -372,6 +377,20 @@ export default function PetChatPage({ params }: { params: Promise<{ petId: strin
 
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-6 py-4">
+            {hasMoreMessages && (
+              <div className="flex justify-center mb-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleLoadMore}
+                  className="text-[10px] font-bold uppercase tracking-widest text-primary hover:text-white hover:bg-primary/10 transition-all gap-2 h-8"
+                >
+                  <History className="w-3 h-3" />
+                  Carregar mensagens anteriores
+                </Button>
+              </div>
+            )}
+
             {sortedMessages.map((msg, i) => (
               <div key={msg.id || i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}>
                 <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
