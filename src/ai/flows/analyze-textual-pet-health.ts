@@ -31,7 +31,7 @@ const prompt = ai.definePrompt({
   name: 'analyzeTextualPetHealthPrompt',
   input: {schema: AnalyzeTextualPetHealthInputSchema},
   output: {schema: AnalyzeTextualPetHealthOutputSchema},
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-1.5-flash',
   config: {
     maxOutputTokens: 500,
   },
