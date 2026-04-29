@@ -1,0 +1,45 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    function isCreator() {
+      return isSignedIn() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isCreator == true ||
+        request.auth.token.email == "wyctorsilvah887@gmail.com"
+      );
+    }
+
+    match /users/{userId} {
+      allow get, list: if isSignedIn();
+      allow update: if isSignedIn() && (
+        isOwner(userId) || 
+        isCreator() || 
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reviewCount', 'totalRatingPoints', 'acceptedTerms']) ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['dailyIAUsage', 'fcmTokens', 'following', 'followers', 'coins', 'xpPoints', 'monthlyXp', 'lastChecklistDate', 'checklistStreak', 'checklistProgress', 'checklistProgressDate', 'checklistProcessedTasks', 'missionProgress', 'ownedItems', 'specialTitle', 'equippedAvatarFrameId', 'avatarFrameColor', 'equippedPostFrameId', 'postFrameColor', 'equippedPetFrames', 'petFrameColor', 'acceptedTerms'])
+        )
+      );
+      allow create, delete: if isOwner(userId) || isCreator();
+
+      match /pets/{petId} {
+        allow get, list: if isSignedIn();
+        allow create, update, delete: if isOwner(userId) || isCreator();
+        
+        match /chatMessages/{messageId} {
+          allow get, list, create, delete: if isOwner(userId) || isCreator();
+        }
+      }
+    }
+
+    match /analyses/{analysisId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isCreator());
+      allow create: if isSignedIn();
+    }
+  }
+}

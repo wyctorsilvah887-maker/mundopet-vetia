@@ -1,0 +1,22 @@
+{
+  "placeholderImages": [
+    {
+      "id": "text-analysis-bg",
+      "description": "Dog and cat with health icons",
+      "imageUrl": "https://picsum.photos/seed/pet-text/800/600",
+      "imageHint": "pet health"
+    },
+    {
+      "id": "image-analysis-bg",
+      "description": "Close up of pet food label",
+      "imageUrl": "https://picsum.photos/seed/pet-image/800/600",
+      "imageHint": "pet food"
+    },
+    {
+      "id": "hero-dog",
+      "description": "Happy dog smiling",
+      "imageUrl": "https://picsum.photos/seed/happy-dog/1200/800",
+      "imageHint": "happy dog"
+    }
+  ]
+}

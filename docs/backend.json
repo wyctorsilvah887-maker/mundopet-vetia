@@ -1,0 +1,144 @@
+
+{
+  "entities": {
+    "Pet": {
+      "title": "Pet",
+      "description": "Dados de um animal de estimação do usuário.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Nome do pet."
+        },
+        "species": {
+          "type": "string",
+          "description": "Espécie (Cão, Gato, etc)."
+        },
+        "breed": {
+          "type": "string",
+          "description": "Raça do pet."
+        },
+        "age": {
+          "type": "number",
+          "description": "Idade aproximada."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL da foto do pet."
+        }
+      },
+      "required": ["name", "species"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "Uma mensagem em uma conversa de chat sobre um pet.",
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"],
+          "description": "O papel do autor da mensagem."
+        },
+        "text": {
+          "type": "string",
+          "description": "O conteúdo da mensagem."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL ou DataURI de uma foto enviada no chat."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Data e hora do envio."
+        }
+      },
+      "required": ["role", "text", "timestamp"]
+    },
+    "PetAnalysis": {
+      "title": "Pet Analysis",
+      "description": "Registro histórico de uma análise de saúde ou nutrição de pet.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["text", "image"],
+          "description": "O tipo de análise realizada."
+        },
+        "input": {
+          "type": "string",
+          "description": "O texto inserido ou o URI da imagem analisada."
+        },
+        "result": {
+          "type": "object",
+          "description": "O resultado gerado pela IA."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Data e hora da análise."
+        },
+        "userId": {
+          "type": "string",
+          "description": "ID do usuário que realizou a análise."
+        }
+      },
+      "required": ["type", "input", "result", "timestamp"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Dados do perfil do usuário cadastrado no sistema.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "E-mail do usuário."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Nome visível do usuário."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL da foto de perfil."
+        },
+        "coins": {
+          "type": "number",
+          "description": "Saldo de moedas do usuário para uso de serviços de IA."
+        },
+        "acceptedTerms": {
+          "type": "boolean",
+          "description": "Indica se o usuário aceitou os termos de uso."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Data de criação da conta."
+        }
+      },
+      "required": ["email", "displayName", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "password"]
+  },
+  "firestore": {
+    "/analyses/{analysisId}": {
+      "schema": "PetAnalysis",
+      "description": "Coleção global de análises de pets."
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Dados de perfil de cada usuário."
+    },
+    "/users/{userId}/pets/{petId}": {
+      "schema": "Pet",
+      "description": "Sub-coleção de pets de cada usuário."
+    },
+    "/users/{userId}/pets/{petId}/chatMessages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Histórico de mensagens do chat de um pet específico."
+    }
+  }
+}
