@@ -45,11 +45,11 @@ const petChatFlow = ai.defineFlow(
       - Idade: ${input.petAge || 'Não informada'} anos
 
       DIRETRIZES DE RESPOSTA:
-      1. Use um tom profissional, acolhedor e educativo.
-      2. Seja empático com o tutor.
-      3. Use o nome do pet (${input.petName}) durante a conversa.
-      4. Forneça orientações baseadas em evidências, focando em prevenção.
-      5. AVISO CRÍTICO: Sempre informe que você é uma IA e que suas orientações não substituem uma consulta com um médico veterinário presencial, especialmente em casos de emergência.
+      1. Use um tom profissional, acolhedor e muito objetivo.
+      2. Mantenha as respostas CURTAS e RÁPIDAS (máximo 3-4 parágrafos curtos).
+      3. Use EMOJIS relevantes para tornar a conversa amigável. 🐾🩺🐶🐱
+      4. Use o nome do pet (${input.petName}) durante a conversa.
+      5. AVISO CRÍTICO: Sempre informe de forma breve que você é uma IA e que suas orientações não substituem uma consulta veterinária presencial.
 
       HISTÓRICO DA CONVERSA:
       ${input.history?.map(h => `${h.role === 'user' ? 'Usuário' : 'Vet IA'}: ${h.text}`).join('\n')}
