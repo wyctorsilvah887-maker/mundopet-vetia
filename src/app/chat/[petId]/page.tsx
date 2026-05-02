@@ -5,10 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useFirebase, useDoc, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
+import { useFirebase, useDoc, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
 import { doc, collection } from "firebase/firestore";
 import { Send, ArrowLeft, Loader2, Bot, User, PawPrint, ImageIcon, Trash2 } from "lucide-react";
-import Link from "next/link";
+import Link from "next/navigation";
+import NextLink from "next/link";
 import Image from "next/image";
 import { petChat } from "@/ai/flows/pet-chat-flow";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -91,10 +92,8 @@ export default function PetChatPage() {
     }
   }
 
-  const handleDeletePet = () => {
-    if (!petRef) return;
-    deleteDocumentNonBlocking(petRef);
-    router.push("/");
+  const handleClearChat = () => {
+    setMessages([]);
   };
 
   if (isPetLoading) {
@@ -114,9 +113,9 @@ export default function PetChatPage() {
         <Navigation />
         <div className="flex-1 flex flex-col items-center justify-center p-4">
           <h2 className="text-xl font-bold mb-2">Pet não encontrado</h2>
-          <Link href="/">
+          <NextLink href="/">
             <Button variant="outline">Voltar ao Início</Button>
-          </Link>
+          </NextLink>
         </div>
       </div>
     );
@@ -130,11 +129,11 @@ export default function PetChatPage() {
         {/* Header do Pet - Estilo Screenshot */}
         <header className="flex items-center justify-between mb-8 px-2">
           <div className="flex items-center gap-4">
-            <Link href="/">
+            <NextLink href="/">
               <Button variant="ghost" size="icon" className="hover:bg-white/5 h-8 w-8">
                 <ArrowLeft className="w-4 h-4 text-muted-foreground" />
               </Button>
-            </Link>
+            </NextLink>
             <div className="flex items-center gap-3">
               <div className="relative h-10 w-10 rounded-full overflow-hidden border border-white/10">
                 <Image 
@@ -159,8 +158,9 @@ export default function PetChatPage() {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={handleDeletePet}
+            onClick={handleClearChat}
             className="text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 h-8 w-8"
+            title="Limpar conversa"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
