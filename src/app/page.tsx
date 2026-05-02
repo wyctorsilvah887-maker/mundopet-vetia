@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Heart, Dog, Cat, PawPrint, Loader2, Trash2, ArrowRight, ShieldCheck } from "lucide-react";
 import { useFirebase, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 
 export default function Home() {
@@ -75,13 +74,15 @@ export default function Home() {
               {pets.map((pet) => (
                 <Card key={pet.id} className="bg-white/[0.02] border-white/5 hover:bg-white/[0.04] transition-all relative group overflow-hidden rounded-2xl border-l-4 border-l-primary/30">
                   <CardContent className="p-5 flex items-center gap-5">
-                    <div className="relative">
-                      <Avatar className="h-16 w-16 border-2 border-primary/20 shadow-xl">
-                        <AvatarImage src={pet.imageUrl} alt={pet.name} className="object-cover" />
-                        <AvatarFallback className="bg-primary/10 text-primary uppercase font-bold text-xl">
-                          {pet.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
+                    <div className="relative h-16 w-16 shrink-0">
+                      <div className="h-full w-full rounded-full overflow-hidden border-2 border-primary/20 shadow-xl relative bg-primary/5">
+                        <Image 
+                          src={pet.imageUrl || `https://picsum.photos/seed/${pet.id}/200/200`} 
+                          alt={pet.name} 
+                          fill 
+                          className="object-cover"
+                        />
+                      </div>
                       <div className="absolute -bottom-1 -right-1 bg-black rounded-full p-1 border border-white/10">
                          {pet.species === 'dog' ? <Dog className="w-3 h-3 text-primary" /> : pet.species === 'cat' ? <Cat className="w-3 h-3 text-primary" /> : <PawPrint className="w-3 h-3 text-primary" />}
                       </div>
@@ -150,7 +151,7 @@ export default function Home() {
 
       <footer className="py-20 border-t border-white/5 bg-black">
         <div className="container mx-auto px-4 flex flex-col items-center text-center gap-8">
-          <div className="flex items-center gap-2 opacity-40">
+          <div className="flex items-center gap-2 opacity-30">
             <PawPrint className="text-primary w-6 h-6" />
             <span className="text-2xl font-bold tracking-tight">
               Vet <span className="text-primary">IA</span>
