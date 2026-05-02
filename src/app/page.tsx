@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -9,9 +8,18 @@ import { Heart, Dog, Cat, PawPrint, Loader2, Trash2, ArrowRight, ShieldCheck } f
 import { useFirebase, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
-  const { firestore, user } = useFirebase();
+  const { firestore, user, isUserLoading } = useFirebase();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, isUserLoading, router]);
 
   // Buscar pets do usuário logado
   const petsQuery = useMemoFirebase(() => {
@@ -26,6 +34,14 @@ export default function Home() {
     const petRef = doc(firestore, "users", user.uid, "pets", petId);
     deleteDocumentNonBlocking(petRef);
   };
+
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

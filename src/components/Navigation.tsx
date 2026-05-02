@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -38,7 +37,6 @@ export function Navigation() {
   const isAnonymous = user?.isAnonymous;
   const isLoggedIn = user && !isAnonymous;
   
-  // Lógica para evitar duplicidade de "CEO/"
   const rawName = profile?.displayName || user?.displayName || user?.email?.split('@')[0] || "Usuário";
   const firstName = rawName.split(' ')[0].replace(/^CEO\//i, '');
   const displayLabel = `CEO/${firstName}`;
@@ -56,7 +54,7 @@ export function Navigation() {
         </Link>
         
         <div className="flex items-center gap-4">
-          {isLoggedIn ? (
+          {isLoggedIn && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 focus:outline-none hover:opacity-80 transition-all bg-white/[0.02] py-1.5 pl-3 pr-1.5 rounded-full border border-white/5">
@@ -90,10 +88,6 @@ export function Navigation() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
-            <Link href="/login" className="text-xs font-bold text-primary tracking-widest uppercase hover:opacity-80 transition-opacity">
-              Acessar Painel
-            </Link>
           )}
         </div>
       </div>
