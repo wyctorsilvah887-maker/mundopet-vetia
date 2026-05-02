@@ -1,6 +1,8 @@
 'use server';
 /**
  * @fileOverview Um agente de IA para chat interativo sobre a saúde de um pet específico.
+ *
+ * - petChat - Função que gerencia a conversa com a IA.
  */
 
 import {ai} from '@/ai/genkit';
@@ -15,7 +17,8 @@ const PetChatInputSchema = z.object({
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
     text: z.string()
-  })).optional()
+  })).optional(),
+  photoDataUri: z.string().optional().describe("URI de dados base64 da foto anexa.")
 });
 export type PetChatInput = z.infer<typeof PetChatInputSchema>;
 
@@ -23,6 +26,33 @@ const PetChatOutputSchema = z.object({
   response: z.string(),
 });
 export type PetChatOutput = z.infer<typeof PetChatOutputSchema>;
+
+const petChatPrompt = ai.definePrompt({
+  name: 'petChatPrompt',
+  input: { schema: PetChatInputSchema },
+  output: { schema: PetChatOutputSchema },
+  config: {
+    temperature: 0.3,
+  },
+  system: `Você é a Vet IA, uma assistente extremamente concisa e amigável da WS Studios.
+
+DIRETRIZES DE RESPOSTA:
+1. Use emojis para facilitar a leitura rápida 🐾.
+2. Use negrito apenas para informações vitais.
+3. Use tópicos curtos e diretos.
+4. Seja sempre muito breve.
+5. Lembre o usuário sobre o limite diário de mensagens quando apropriado.
+6. REGRA VITAL DE SEGURANÇA: Se o usuário mencionar QUALQUER sintoma, dor, comportamento estranho ou mal-estar no animal, você DEVE obrigatoriamente incluir a seguinte frase em destaque: "**É indispensável procurar um médico veterinário presencialmente, pois isso é fundamental para a segurança e saúde do seu pet.**"`,
+  prompt: `Pet: {{petName}} ({{petSpecies}}, {{#if petBreed}}{{petBreed}}{{else}}SRD{{/if}}{{#if petAge}}, {{petAge}} anos{{/if}}).
+
+Histórico:
+{{#each history}}
+{{role}}: {{{text}}}
+{{/each}}
+
+Mensagem atual: {{{message}}}
+{{#if photoDataUri}}Foto anexa: {{media url=photoDataUri}}{{/if}}`,
+});
 
 export async function petChat(input: PetChatInput): Promise<PetChatOutput> {
   return petChatFlow(input);
@@ -35,30 +65,7 @@ const petChatFlow = ai.defineFlow(
     outputSchema: PetChatOutputSchema,
   },
   async (input) => {
-    const {text} = await ai.generate({
-      prompt: `Você é o Vet IA, um assistente veterinário inteligente da WS Studios, especialista em saúde e bem-estar animal.
-      
-      Você está conversando com o tutor do pet:
-      - Nome: ${input.petName}
-      - Espécie: ${input.petSpecies === 'dog' ? 'Cão' : input.petSpecies === 'cat' ? 'Gato' : 'Pet'}
-      - Raça: ${input.petBreed || 'Não informada'}
-      - Idade: ${input.petAge || 'Não informada'} anos
-
-      DIRETRIZES DE RESPOSTA:
-      1. Use um tom profissional, acolhedor e muito objetivo.
-      2. Mantenha as respostas CURTAS e RÁPIDAS (máximo 3-4 parágrafos curtos).
-      3. Use EMOJIS relevantes para tornar a conversa amigável. 🐾🩺🐶🐱
-      4. Use o nome do pet (${input.petName}) durante a conversa.
-      5. AVISO CRÍTICO: Sempre informe de forma breve que você é uma IA e que suas orientações não substituem uma consulta veterinária presencial.
-
-      HISTÓRICO DA CONVERSA:
-      ${input.history?.map(h => `${h.role === 'user' ? 'Usuário' : 'Vet IA'}: ${h.text}`).join('\n')}
-
-      MENSAGEM DO USUÁRIO: ${input.message}
-      
-      RESPOSTA DO VET IA (em português brasileiro):`,
-    });
-    
-    return { response: text || 'Desculpe, não consegui processar sua mensagem agora.' };
+    const { output } = await petChatPrompt(input);
+    return output || { response: 'Desculpe, não consegui processar sua mensagem agora. 🐾' };
   }
 );

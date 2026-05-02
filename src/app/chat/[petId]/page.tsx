@@ -11,7 +11,6 @@ import { Send, ArrowLeft, Loader2, Bot, User, PawPrint, ImageIcon, Trash2, Alert
 import NextLink from "next/link";
 import Image from "next/image";
 import { petChat } from "@/ai/flows/pet-chat-flow";
-import { analyzeImageFoodSymptoms } from "@/ai/flows/analyze-image-food-symptoms";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +32,6 @@ export default function PetChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Determinar o início do dia atual para o limite de mensagens
   const [startOfToday] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -47,7 +45,6 @@ export default function PetChatPage() {
 
   const { data: pet, isLoading: isPetLoading } = useDoc(petRef);
 
-  // Consulta para contar mensagens enviadas hoje
   const dailyMessagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
@@ -119,7 +116,7 @@ export default function PetChatPage() {
 
     } catch (error) {
       console.error(error);
-      setMessages(prev => [...prev, { role: 'model', text: "Desculpe, tive um problema ao processar sua mensagem. Tente novamente em instantes." }]);
+      setMessages(prev => [...prev, { role: 'model', text: "Desculpe, tive um problema ao processar sua mensagem. Tente novamente em instantes. 🐾" }]);
     } finally {
       setIsLoading(false);
     }
@@ -146,19 +143,25 @@ export default function PetChatPage() {
     reader.onloadend = async () => {
       const imageDataUri = reader.result as string;
       try {
-        const output = await analyzeImageFoodSymptoms({ 
-          imageDataUri,
-          description: `Análise para o pet ${pet.name} (${pet.species})`
+        const chatHistory = messages.map(m => ({ role: m.role, text: m.text }));
+        
+        const response = await petChat({
+          petName: pet.name,
+          petSpecies: pet.species,
+          petBreed: pet.breed,
+          petAge: pet.age,
+          message: "Analise esta imagem, por favor.",
+          photoDataUri: imageDataUri,
+          history: chatHistory
         });
 
-        const aiText = output.analysis;
+        const aiText = response.response;
         setMessages(prev => {
           const newMessages = [...prev];
           newMessages[newMessages.length - 1] = { role: 'user', text: "[Imagem enviada]" };
           return [...newMessages, { role: 'model', text: aiText }];
         });
 
-        // Salvar no Firestore
         const analysisRef = collection(firestore, 'users', user.uid, 'analysisRequests');
         addDocumentNonBlocking(analysisRef, {
           userId: user.uid,
@@ -282,7 +285,7 @@ export default function PetChatPage() {
                   </div>
                   <div className="bg-white/[0.03] p-4 rounded-2xl rounded-tl-none max-w-[80%]">
                     <p className="text-sm leading-relaxed text-white/90">
-                      Olá! Como posso ajudar você e o(a) {pet.name} hoje? Descreva sintomas ou anexe uma foto de rótulo ou problema físico.
+                      Olá! Como posso ajudar você e o(a) {pet.name} hoje? Descreva sintomas ou anexe uma foto de rótulo ou problema físico. 🐾
                     </p>
                   </div>
                 </div>
