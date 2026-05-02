@@ -31,6 +31,7 @@ export default function PetChatPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollAnchorRef = useRef<HTMLDivElement>(null);
 
   const [startOfToday] = useState(() => {
     const d = new Date();
@@ -63,10 +64,10 @@ export default function PetChatPage() {
     }
   }, [user, isUserLoading, router]);
 
+  // Sistema de rolagem automática
   useEffect(() => {
-    const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]');
-    if (scrollContainer) {
-      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    if (scrollAnchorRef.current) {
+      scrollAnchorRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isLoading]);
 
@@ -276,7 +277,7 @@ export default function PetChatPage() {
             <h1 className="text-6xl font-black tracking-[0.3em]">VET IA</h1>
           </div>
 
-          <ScrollArea className="h-full w-full">
+          <ScrollArea className="h-full w-full pr-4">
             <div className="space-y-6 pb-4">
               {messages.length === 0 && (
                 <div className="flex gap-4">
@@ -292,7 +293,7 @@ export default function PetChatPage() {
               )}
 
               {messages.map((msg, i) => (
-                <div key={i} className={cn("flex gap-4", msg.role === 'user' ? "flex-row-reverse" : "")}>
+                <div key={i} className={cn("flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300", msg.role === 'user' ? "flex-row-reverse" : "")}>
                   <div className={cn(
                     "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
                     msg.role === 'user' ? "bg-secondary" : "bg-primary/10"
@@ -303,7 +304,7 @@ export default function PetChatPage() {
                     "p-4 rounded-2xl max-w-[80%] text-sm leading-relaxed",
                     msg.role === 'user' 
                       ? "bg-primary text-black font-medium rounded-tr-none" 
-                      : "bg-white/[0.03] text-white/90 rounded-tl-none"
+                      : "bg-white/[0.03] text-white/90 rounded-tl-none shadow-sm"
                   )}>
                     <p className="whitespace-pre-line">{msg.text}</p>
                   </div>
@@ -328,6 +329,9 @@ export default function PetChatPage() {
                   </div>
                 </div>
               )}
+
+              {/* Âncora para rolagem automática */}
+              <div ref={scrollAnchorRef} className="h-2" />
             </div>
           </ScrollArea>
         </div>
