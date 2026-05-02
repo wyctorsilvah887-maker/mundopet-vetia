@@ -1,7 +1,8 @@
+
 "use client";
 
 import Link from "next/link";
-import { Stethoscope, LogOut, History, ChevronDown } from "lucide-react";
+import { Stethoscope, LogOut, History, ChevronDown, PawPrint } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
 import { 
@@ -19,7 +20,7 @@ export function Navigation() {
   const { user, auth, firestore } = useFirebase();
   const router = useRouter();
 
-  // Buscar dados extras do perfil no Firestore para garantir o nome e foto corretos
+  // Buscar dados extras do perfil no Firestore
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, "users", user.uid);
@@ -38,25 +39,25 @@ export function Navigation() {
   const isLoggedIn = user && !isAnonymous;
   const displayName = profile?.displayName || user?.displayName || user?.email?.split('@')[0] || "Usuário";
   
-  // URL da foto: prioridade para profile do Firestore, depois auth do Firebase, depois fallback Picsum
   const userPhotoUrl = profile?.photoURL || user?.photoURL || `https://picsum.photos/seed/${user?.uid || 'guest'}/100/100`;
 
   return (
     <nav className="bg-background border-b border-white/5 sticky top-0 z-50">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <Stethoscope className="text-primary w-6 h-6" />
+          <PawPrint className="text-primary w-6 h-6" />
           <span className="text-xl font-bold tracking-tight">
             Vet <span className="text-primary">IA</span>
           </span>
         </Link>
         
         <div className="flex items-center gap-4">
-          {isLoggedIn && (
+          {isLoggedIn ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 focus:outline-none hover:opacity-80 transition-all bg-white/5 py-1.5 pl-1.5 pr-3 rounded-full border border-white/10">
-                  <Avatar className="h-8 w-8 border border-primary/20">
+                <button className="flex items-center gap-3 focus:outline-none hover:opacity-80 transition-all bg-white/[0.02] py-1.5 pl-3 pr-1.5 rounded-full border border-white/5">
+                  <span className="text-xs font-bold text-white tracking-wide">CEO/{displayName.split(' ')[0]}</span>
+                  <Avatar className="h-8 w-8 border border-white/10 shadow-xl">
                     <AvatarImage 
                       src={userPhotoUrl} 
                       alt={displayName}
@@ -66,7 +67,6 @@ export function Navigation() {
                       {displayName.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 border-white/10 bg-black/95 text-white shadow-2xl">
@@ -86,6 +86,10 @@ export function Navigation() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          ) : (
+            <Link href="/login" className="text-xs font-bold text-primary tracking-widest uppercase hover:opacity-80 transition-opacity">
+              Acessar Painel
+            </Link>
           )}
         </div>
       </div>

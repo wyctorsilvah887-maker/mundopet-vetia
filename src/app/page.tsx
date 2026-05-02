@@ -1,13 +1,15 @@
+
 "use client";
 
 import Link from "next/link";
 import { Navigation } from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Dog, Cat, PawPrint, Loader2, Trash2, ArrowRight } from "lucide-react";
+import { Heart, Dog, Cat, PawPrint, Loader2, Trash2, ArrowRight, ShieldCheck } from "lucide-react";
 import { useFirebase, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Image from "next/image";
 
 export default function Home() {
   const { firestore, user } = useFirebase();
@@ -49,7 +51,7 @@ export default function Home() {
         </section>
 
         {/* My Pets Section */}
-        <section className="container mx-auto px-4 pb-20 max-w-5xl">
+        <section className="container mx-auto px-4 pb-12 max-w-5xl">
           <div className="flex items-center justify-between gap-2 mb-8">
             <div className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-primary" fill="currentColor" />
@@ -63,18 +65,11 @@ export default function Home() {
               <p className="text-sm">Carregando seus pets...</p>
             </div>
           ) : !pets || pets.length === 0 ? (
-            <Card className="bg-white/[0.02] border-white/5 border-dashed min-h-[300px] flex items-center justify-center relative overflow-hidden group rounded-2xl">
-              <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <CardContent className="text-center relative z-10 flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                  <Heart className="w-8 h-8 text-white/10" />
-                </div>
-                <h3 className="text-lg font-bold mb-2">Sua lista está vazia</h3>
-                <p className="text-xs text-muted-foreground uppercase tracking-widest max-w-[250px] leading-loose">
-                  CADASTRE SEUS ANIMAIS NO SISTEMA PARA INICIAR O CHAT INTELIGENTE.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="border-2 border-dashed border-white/5 rounded-3xl p-12 text-center bg-white/[0.01]">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-bold">
+                CADASTRE SEUS ANIMAIS NO SISTEMA PARA INICIAR O CHAT INTELIGENTE.
+              </p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {pets.map((pet) => (
@@ -97,7 +92,7 @@ export default function Home() {
                         {pet.breed} • {pet.age} {pet.age === 1 ? 'ano' : 'anos'}
                       </p>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
                        <Button 
                         variant="ghost" 
                         size="icon" 
@@ -138,13 +133,38 @@ export default function Home() {
             </Link>
           </div>
         </section>
+
+        {/* Mission Card Section */}
+        <section className="container mx-auto px-4 pb-20 max-w-4xl">
+          <div className="bg-white/[0.02] border border-white/5 rounded-[40px] p-10 md:p-16 text-center space-y-6">
+            <div className="w-12 h-12 rounded-full border border-primary/30 flex items-center justify-center mx-auto mb-4 bg-primary/5">
+              <ShieldCheck className="w-6 h-6 text-primary" />
+            </div>
+            <h3 className="text-2xl font-bold">Tecnologia WS Studios</h3>
+            <p className="text-muted-foreground text-sm max-w-2xl mx-auto leading-relaxed italic">
+              Nossa missão é antecipar problemas e educar tutores. Lembre-se: o Vet IA orienta através de análise de dados, mas não substitui a consulta profissional.
+            </p>
+          </div>
+        </section>
       </main>
 
-      <footer className="py-12 border-t border-white/5">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">
-            © {new Date().getFullYear()} Vet IA • WS Studios • Tecnologia Aplicada à Saúde Animal
-          </p>
+      <footer className="py-20 border-t border-white/5 bg-black">
+        <div className="container mx-auto px-4 flex flex-col items-center text-center gap-8">
+          <div className="flex items-center gap-2">
+            <PawPrint className="text-primary w-6 h-6" />
+            <span className="text-2xl font-bold tracking-tight">
+              Vet <span className="text-primary">IA</span>
+            </span>
+          </div>
+          
+          <div className="space-y-4">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em] font-bold">
+              DESENVOLVIDO POR WS STUDIOS
+            </p>
+            <p className="text-[10px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium">
+              © 2026 VET IA • WS STUDIOS • ALL RIGHTS RESERVED
+            </p>
+          </div>
         </div>
       </footer>
     </div>
