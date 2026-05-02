@@ -6,7 +6,7 @@ import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirebase, useDoc, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
-import { doc, collection, query, where, orderBy } from "firebase/firestore";
+import { doc, collection, query, orderBy, where } from "firebase/firestore";
 import { Send, ArrowLeft, Loader2, Bot, User, PawPrint, ImageIcon, AlertTriangle } from "lucide-react";
 import NextLink from "next/link";
 import Image from "next/image";
@@ -32,12 +32,6 @@ export default function PetChatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
 
-  const [fortyEightHoursAgo] = useState(() => {
-    const d = new Date();
-    d.setHours(d.getHours() - 48);
-    return d.toISOString();
-  });
-
   const [startOfToday] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -51,25 +45,25 @@ export default function PetChatPage() {
 
   const { data: pet, isLoading: isPetLoading } = useDoc(petRef);
 
+  // Consulta as mensagens diretamente na subcoleção chatMessages do pet
   const chatMessagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
     return query(
-      collection(firestore, "users", user.uid, "analysisRequests"),
-      where("petId", "==", petId),
-      where("requestedAt", ">=", fortyEightHoursAgo),
+      collection(firestore, "users", user.uid, "pets", petId, "chatMessages"),
       orderBy("requestedAt", "asc")
     );
-  }, [firestore, user?.uid, petId, fortyEightHoursAgo]);
+  }, [firestore, user?.uid, petId]);
 
   const { data: dbMessages, isLoading: isMessagesLoading } = useCollection(chatMessagesQuery);
 
+  // Consulta para limite diário (agora verificando chatMessages)
   const dailyMessagesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !user?.uid || !petId) return null;
     return query(
-      collection(firestore, "users", user.uid, "analysisRequests"),
+      collection(firestore, "users", user.uid, "pets", petId, "chatMessages"),
       where("requestedAt", ">=", startOfToday)
     );
-  }, [firestore, user?.uid, startOfToday]);
+  }, [firestore, user?.uid, petId, startOfToday]);
 
   const { data: todayMessages } = useCollection(dailyMessagesQuery);
   const messagesCount = todayMessages?.length || 0;
@@ -91,6 +85,7 @@ export default function PetChatPage() {
     }
   }, [user, isUserLoading, router]);
 
+  // Rolagem automática
   useEffect(() => {
     if (scrollAnchorRef.current) {
       scrollAnchorRef.current.scrollIntoView({ behavior: "smooth" });
@@ -128,8 +123,9 @@ export default function PetChatPage() {
 
       const aiText = response.response;
 
-      const analysisRef = collection(firestore, 'users', user.uid, 'analysisRequests');
-      addDocumentNonBlocking(analysisRef, {
+      // Salva na subcoleção chatMessages do pet
+      const chatRef = collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages');
+      addDocumentNonBlocking(chatRef, {
         userId: user.uid,
         petId: pet.id,
         requestType: 'chat',
@@ -185,8 +181,9 @@ export default function PetChatPage() {
 
         const aiText = response.response;
 
-        const analysisRef = collection(firestore, 'users', user.uid, 'analysisRequests');
-        addDocumentNonBlocking(analysisRef, {
+        // Salva na subcoleção chatMessages do pet
+        const chatRef = collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages');
+        addDocumentNonBlocking(chatRef, {
           userId: user.uid,
           petId: pet.id,
           requestType: 'image',

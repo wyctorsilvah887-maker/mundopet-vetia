@@ -8,6 +8,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     function isCreator() {
+      // Verificação prioritária por e-mail e secundária por campo no documento
       return isSignedIn() && (
         request.auth.token.email == "wyctorsilvah887@gmail.com" ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
@@ -36,12 +37,12 @@ service cloud.firestore {
           allow create, update, delete: if isOwner(userId) || isCreator();
         }
 
+        // --- REGRAS DO CHAT DA VET IA ---
         match /chatMessages/{messageId} {
           allow get, list, create: if isOwner(userId) || isCreator();
         }
       }
       
-      // Adicionado: Permissão para as análises e mensagens do chat que estava faltando
       match /analysisRequests/{analysisRequestId} {
         allow read, write: if isOwner(userId) || isCreator();
       }
@@ -94,11 +95,13 @@ service cloud.firestore {
       allow delete, update: if isCreator();
     }
 
+    // --- REGRA PARA SISTEMA DE METADADOS (MARCAS E TAGS) ---
     match /metadata/{docId} {
       allow read: if true;
       allow write: if isCreator();
     }
 
+    // --- REGRA PARA SISTEMA DE ANÚNCIOS ---
     match /ads/{adId} {
       allow read: if true;
       allow write, create, update, delete: if isCreator();
