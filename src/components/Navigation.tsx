@@ -1,45 +1,53 @@
+
 "use client";
 
 import Link from "next/link";
-import { Stethoscope, History, MessageSquare, Camera } from "lucide-react";
+import { Stethoscope, UserCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function Navigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="border-b bg-card shadow-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+    <nav className="bg-background border-b border-white/5 sticky top-0 z-50">
+      <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-primary p-2 rounded-lg group-hover:bg-primary/90 transition-colors">
-            <Stethoscope className="text-primary-foreground w-6 h-6" />
-          </div>
-          <span className="text-xl font-bold font-headline tracking-tight text-primary">
-            AnimaVet <span className="text-accent">AI</span>
+          <Stethoscope className="text-primary w-6 h-6" />
+          <span className="text-xl font-bold tracking-tight">
+            Vet <span className="text-primary">IA</span>
           </span>
         </Link>
-        <div className="hidden md:flex items-center gap-6">
+        
+        <div className="hidden md:flex items-center gap-8">
           <Link 
             href="/analise-texto" 
-            className={`text-sm font-medium flex items-center gap-1.5 transition-colors ${pathname === '/analise-texto' ? 'text-primary font-bold' : 'hover:text-primary'}`}
+            className={`text-sm font-medium transition-colors ${pathname === '/analise-texto' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
           >
-            <MessageSquare className="w-4 h-4" /> Análise de Texto
+            Análise de Texto
           </Link>
           <Link 
             href="/analise-imagem" 
-            className={`text-sm font-medium flex items-center gap-1.5 transition-colors ${pathname === '/analise-imagem' ? 'text-primary font-bold' : 'hover:text-primary'}`}
+            className={`text-sm font-medium transition-colors ${pathname === '/analise-imagem' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
           >
-            <Camera className="w-4 h-4" /> Análise de Imagem
+            Análise de Imagem
           </Link>
           <Link 
             href="/historico" 
-            className={`text-sm font-medium flex items-center gap-1.5 transition-colors ${pathname === '/historico' ? 'text-primary font-bold' : 'hover:text-primary'}`}
+            className={`text-sm font-medium transition-colors ${pathname === '/historico' ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
           >
-            <History className="w-4 h-4" /> Histórico
+            Histórico
           </Link>
         </div>
-        <div className="flex items-center gap-2 bg-secondary/50 px-3 py-1 rounded-full border border-primary/10">
-          <span className="text-xs font-semibold uppercase tracking-wider text-primary">Pets em Foco</span>
+
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end hidden sm:flex">
+            <span className="text-xs font-bold text-white">CEO/Wyctor</span>
+          </div>
+          <Avatar className="h-10 w-10 border border-white/10">
+            <AvatarImage src="https://picsum.photos/seed/user1/100/100" />
+            <AvatarFallback><UserCircle /></AvatarFallback>
+          </Avatar>
         </div>
       </div>
     </nav>

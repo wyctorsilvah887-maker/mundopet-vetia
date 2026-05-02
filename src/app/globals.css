@@ -5,47 +5,26 @@
 
 @layer base {
   :root {
-    --background: 210 20% 96%;
-    --foreground: 210 40% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 210 40% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 40% 10%;
-    --primary: 210 70% 45%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 210 30% 90%;
-    --secondary-foreground: 210 70% 30%;
-    --muted: 210 20% 90%;
-    --muted-foreground: 210 20% 40%;
-    --accent: 180 80% 50%;
-    --accent-foreground: 180 80% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 210 20% 85%;
-    --input: 210 20% 85%;
-    --ring: 210 70% 45%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 3%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 3%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 150 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 150 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 150 100% 50%;
     --radius: 0.75rem;
-  }
-  .dark {
-    --background: 210 40% 5%;
-    --foreground: 210 20% 98%;
-    --card: 210 40% 8%;
-    --card-foreground: 210 20% 98%;
-    --popover: 210 40% 8%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 210 70% 55%;
-    --primary-foreground: 210 20% 10%;
-    --secondary: 210 30% 15%;
-    --secondary-foreground: 210 20% 90%;
-    --muted: 210 30% 15%;
-    --muted-foreground: 210 20% 65%;
-    --accent: 180 80% 50%;
-    --accent-foreground: 180 80% 10%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 210 30% 15%;
-    --input: 210 30% 15%;
-    --ring: 210 70% 55%;
   }
 }
 
@@ -54,6 +33,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground font-body antialiased;
   }
 }
