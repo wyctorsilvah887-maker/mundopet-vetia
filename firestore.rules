@@ -41,7 +41,7 @@ service cloud.firestore {
         }
       }
       
-      // Permissão para as análises e mensagens do chat
+      // Adicionado: Permissão para as análises e mensagens do chat que estava faltando
       match /analysisRequests/{analysisRequestId} {
         allow read, write: if isOwner(userId) || isCreator();
       }

@@ -51,7 +51,7 @@ Histórico:
 {{/each}}
 
 Mensagem atual: {{{userMessage}}}
-{{#if photoDataUri}}Foto anexa: {{media url=photoDataUri}}{{if}}`,
+{{#if photoDataUri}}Foto anexa: {{media url=photoDataUri}}{{/if}}`,
 });
 
 export async function petChat(input: PetChatInput): Promise<PetChatOutput> {
