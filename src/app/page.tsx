@@ -24,7 +24,6 @@ export default function Home() {
 
   const petsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // Buscamos na subcoleção pets do usuário logado
     return query(collection(firestore, "users", user.uid, "pets"), orderBy("name"));
   }, [firestore, user]);
 
@@ -56,7 +55,7 @@ export default function Home() {
               <span className="text-[10px] font-bold text-primary tracking-widest uppercase">✨ IA PREVENTIVA DE SAÚDE</span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight text-white">
               Cuidando do seu <span className="text-primary italic">pet</span> com IA
             </h1>
             
@@ -70,7 +69,7 @@ export default function Home() {
         <section className="container mx-auto px-4 pb-12 max-w-5xl">
           <div className="flex items-center gap-2 mb-8">
             <div className="h-2 w-2 rounded-full bg-primary" />
-            <h2 className="text-xl font-bold flex items-center gap-2">
+            <h2 className="text-xl font-bold flex items-center gap-2 text-white">
               <Heart className="w-5 h-5 text-primary" fill="currentColor" /> Meus Pets
             </h2>
           </div>
@@ -93,9 +92,9 @@ export default function Home() {
                   <CardContent className="p-5 flex items-center gap-5">
                     <div className="relative h-20 w-20 shrink-0">
                       <div className="h-full w-full rounded-full overflow-hidden border-2 border-white/10 shadow-2xl bg-muted/20 relative">
-                        {/* Tentamos carregar o campo imageUrl do banco de dados */}
+                        {/* Buscando do campo photoURL conforme solicitado */}
                         <Image 
-                          src={pet.imageUrl || `https://picsum.photos/seed/${pet.id}/200/200`} 
+                          src={pet.photoURL || `https://picsum.photos/seed/${pet.id}/200/200`} 
                           alt={pet.name} 
                           fill
                           className="object-cover"
@@ -160,7 +159,7 @@ export default function Home() {
             <div className="w-12 h-12 rounded-full border border-primary/30 flex items-center justify-center mx-auto mb-4 bg-primary/5">
               <ShieldCheck className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold">Tecnologia WS Studios</h3>
+            <h3 className="text-2xl font-bold text-white">Tecnologia WS Studios</h3>
             <p className="text-muted-foreground text-sm max-w-2xl mx-auto leading-relaxed italic">
               Nossa missão é antecipar problemas e educar tutores. Lembre-se: o Vet IA orienta através de análise de dados, mas não substitui a consulta profissional.
             </p>
@@ -172,7 +171,7 @@ export default function Home() {
         <div className="container mx-auto px-4 flex flex-col items-center text-center gap-8">
           <div className="flex items-center gap-2 opacity-30">
             <PawPrint className="text-primary w-6 h-6" />
-            <span className="text-2xl font-bold tracking-tight">
+            <span className="text-2xl font-bold tracking-tight text-white">
               Vet <span className="text-primary">IA</span>
             </span>
           </div>

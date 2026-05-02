@@ -69,7 +69,7 @@
           "type": "number",
           "description": "The age of the pet in years."
         },
-        "imageUrl": {
+        "photoURL": {
           "type": "string",
           "format": "uri",
           "description": "A placeholder image URL for the pet."
