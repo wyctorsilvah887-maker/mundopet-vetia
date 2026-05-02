@@ -1,3 +1,22 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-pet",
+      "description": "Happy dog and cat together",
+      "imageUrl": "https://picsum.photos/seed/animavet1/800/400",
+      "imageHint": "dog cat"
+    },
+    {
+      "id": "food-analysis",
+      "description": "Pet food label close up",
+      "imageUrl": "https://picsum.photos/seed/animavet2/600/400",
+      "imageHint": "pet food"
+    },
+    {
+      "id": "symptom-check",
+      "description": "Veterinary checkup",
+      "imageUrl": "https://picsum.photos/seed/animavet3/600/400",
+      "imageHint": "vet exam"
+    }
+  ]
 }
