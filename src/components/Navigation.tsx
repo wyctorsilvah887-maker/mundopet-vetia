@@ -21,7 +21,7 @@ export function Navigation() {
   const { user, auth, firestore } = useFirebase();
   const router = useRouter();
 
-  // Buscar dados extras do perfil no Firestore para garantir o nome correto
+  // Buscar dados extras do perfil no Firestore para garantir o nome e foto corretos
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, "users", user.uid);
@@ -39,6 +39,9 @@ export function Navigation() {
   const isAnonymous = user?.isAnonymous;
   const isLoggedIn = user && !isAnonymous;
   const displayName = profile?.displayName || user?.displayName || user?.email?.split('@')[0] || "Usuário";
+  
+  // URL da foto: prioridade para profile do Firestore, depois auth do Firebase, depois fallback Picsum
+  const userPhotoUrl = profile?.photoURL || user?.photoURL || `https://picsum.photos/seed/${user?.uid || 'guest'}/100/100`;
 
   return (
     <nav className="bg-background border-b border-white/5 sticky top-0 z-50">
@@ -56,7 +59,11 @@ export function Navigation() {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 focus:outline-none hover:opacity-80 transition-all bg-white/5 py-1.5 pl-1.5 pr-3 rounded-full border border-white/10">
                   <Avatar className="h-8 w-8 border border-primary/20">
-                    <AvatarImage src={`https://picsum.photos/seed/${user.uid}/100/100`} />
+                    <AvatarImage 
+                      src={userPhotoUrl} 
+                      alt={displayName}
+                      className="object-cover"
+                    />
                     <AvatarFallback className="bg-primary/10 text-primary">
                       {displayName.charAt(0).toUpperCase()}
                     </AvatarFallback>

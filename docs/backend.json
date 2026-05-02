@@ -20,6 +20,11 @@
           "type": "string",
           "description": "A user-friendly name to display for the user."
         },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "The user's profile picture URL."
+        },
         "createdAt": {
           "type": "string",
           "description": "Timestamp indicating when the user profile was created.",

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirebase, initiateEmailSignIn, initiateEmailSignUp } from "@/firebase";
-import { Loader2, Mail, Lock, User, ArrowRight, Github } from "lucide-react";
+import { Loader2, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc } from "firebase/firestore";
 
@@ -55,11 +55,14 @@ export default function LoginPage() {
       const userCredential = await initiateEmailSignUp(auth, email, password);
       const newUser = userCredential.user;
       
+      const name = displayName || newUser.email?.split('@')[0] || "Usuário";
+      
       // Criar perfil do usuário no Firestore
       await setDoc(doc(firestore, "users", newUser.uid), {
         id: newUser.uid,
         email: newUser.email,
-        displayName: displayName || newUser.email?.split('@')[0] || "Usuário",
+        displayName: name,
+        photoURL: `https://picsum.photos/seed/${newUser.uid}/200/200`,
         createdAt: new Date().toISOString()
       });
 
