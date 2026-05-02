@@ -1,11 +1,10 @@
-
 "use client";
 
 import Link from "next/link";
 import { Navigation } from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Dog, Cat, PawPrint, Loader2, Trash2, ArrowRight, ShieldCheck } from "lucide-react";
+import { Heart, Dog, Cat, PawPrint, Loader2, Trash2, ArrowRight, ShieldCheck, MessageCircle } from "lucide-react";
 import { useFirebase, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
@@ -29,7 +28,9 @@ export default function Home() {
 
   const { data: pets, isLoading: isPetsLoading } = useCollection(petsQuery);
 
-  const handleDeletePet = (petId: string) => {
+  const handleDeletePet = (e: React.MouseEvent, petId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!firestore || !user) return;
     const petRef = doc(firestore, "users", user.uid, "pets", petId);
     deleteDocumentNonBlocking(petRef);
@@ -88,41 +89,45 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {pets.map((pet) => (
-                <Card key={pet.id} className="bg-white/[0.02] border-white/5 hover:bg-white/[0.04] transition-all relative group overflow-hidden rounded-2xl border-l-4 border-l-primary/30">
-                  <CardContent className="p-5 flex items-center gap-5">
-                    <div className="relative h-20 w-20 shrink-0">
-                      <div className="h-full w-full rounded-full overflow-hidden border-2 border-white/10 shadow-2xl bg-muted/20 relative">
-                        {/* Buscando do campo photoURL conforme solicitado */}
-                        <Image 
-                          src={pet.photoURL || `https://picsum.photos/seed/${pet.id}/200/200`} 
-                          alt={pet.name} 
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
+                <Link key={pet.id} href={`/chat/${pet.id}`}>
+                  <Card className="bg-white/[0.02] border-white/5 hover:bg-white/[0.04] transition-all relative group overflow-hidden rounded-2xl border-l-4 border-l-primary/30 h-full">
+                    <CardContent className="p-5 flex items-center gap-5">
+                      <div className="relative h-20 w-20 shrink-0">
+                        <div className="h-full w-full rounded-full overflow-hidden border-2 border-white/10 shadow-2xl bg-muted/20 relative">
+                          <Image 
+                            src={pet.photoURL || `https://picsum.photos/seed/${pet.id}/200/200`} 
+                            alt={pet.name} 
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 bg-black rounded-full p-1 border border-white/10 z-10">
+                           {pet.species === 'dog' ? <Dog className="w-3 h-3 text-primary" /> : pet.species === 'cat' ? <Cat className="w-3 h-3 text-primary" /> : <PawPrint className="w-3 h-3 text-primary" />}
+                        </div>
                       </div>
-                      <div className="absolute -bottom-1 -right-1 bg-black rounded-full p-1 border border-white/10 z-10">
-                         {pet.species === 'dog' ? <Dog className="w-3 h-3 text-primary" /> : pet.species === 'cat' ? <Cat className="w-3 h-3 text-primary" /> : <PawPrint className="w-3 h-3 text-primary" />}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-xl truncate text-white mb-0.5">{pet.name}</h4>
+                        <p className="text-xs text-muted-foreground truncate font-medium uppercase tracking-wider">
+                          {pet.breed} {pet.age ? `• ${pet.age} ${pet.age === 1 ? 'ano' : 'anos'}` : ''}
+                        </p>
+                        <div className="mt-2 flex items-center gap-1 text-[10px] text-primary font-bold uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">
+                          <MessageCircle className="w-3 h-3" /> Abrir Chat
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-xl truncate text-white mb-0.5">{pet.name}</h4>
-                      <p className="text-xs text-muted-foreground truncate font-medium uppercase tracking-wider">
-                        {pet.breed} {pet.age ? `• ${pet.age} ${pet.age === 1 ? 'ano' : 'anos'}` : ''}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                       <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
-                        onClick={() => handleDeletePet(pet.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <div className="flex gap-2">
+                         <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
+                          onClick={(e) => handleDeletePet(e, pet.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           )}
