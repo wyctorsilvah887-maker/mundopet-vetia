@@ -5,9 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useFirebase, useDoc, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
-import { doc, collection } from "firebase/firestore";
-import { Send, ArrowLeft, Loader2, Bot, User, PawPrint, ImageIcon, Trash2 } from "lucide-react";
+import { useFirebase, useDoc, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
+import { doc, collection, query, where } from "firebase/firestore";
+import { Send, ArrowLeft, Loader2, Bot, User, PawPrint, ImageIcon, Trash2, AlertTriangle } from "lucide-react";
 import NextLink from "next/link";
 import Image from "next/image";
 import { petChat } from "@/ai/flows/pet-chat-flow";
@@ -33,12 +33,32 @@ export default function PetChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Determinar o início do dia atual para o limite de mensagens
+  const [startOfToday] = useState(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  });
+
   const petRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
     return doc(firestore, "users", user.uid, "pets", petId);
   }, [firestore, user?.uid, petId]);
 
   const { data: pet, isLoading: isPetLoading } = useDoc(petRef);
+
+  // Consulta para contar mensagens enviadas hoje
+  const dailyMessagesQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(
+      collection(firestore, "users", user.uid, "analysisRequests"),
+      where("requestedAt", ">=", startOfToday)
+    );
+  }, [firestore, user?.uid, startOfToday]);
+
+  const { data: todayMessages } = useCollection(dailyMessagesQuery);
+  const messagesCount = todayMessages?.length || 0;
+  const isLimitReached = messagesCount >= 6;
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -56,6 +76,15 @@ export default function PetChatPage() {
   async function handleSendMessage(e?: React.FormEvent) {
     if (e) e.preventDefault();
     if (!input.trim() || isLoading || !pet || !user || !firestore) return;
+
+    if (isLimitReached) {
+      toast({
+        variant: "destructive",
+        title: "Limite diário atingido",
+        description: "Você já utilizou suas 6 mensagens gratuitas de hoje."
+      });
+      return;
+    }
 
     const userMessage = input.trim();
     setInput("");
@@ -80,6 +109,7 @@ export default function PetChatPage() {
       const analysisRef = collection(firestore, 'users', user.uid, 'analysisRequests');
       addDocumentNonBlocking(analysisRef, {
         userId: user.uid,
+        petId: pet.id,
         requestType: 'chat',
         textInput: userMessage,
         analysisOutput: aiText,
@@ -99,8 +129,18 @@ export default function PetChatPage() {
     const file = e.target.files?.[0];
     if (!file || !pet || !user || !firestore) return;
 
+    if (isLimitReached) {
+      toast({
+        variant: "destructive",
+        title: "Limite diário atingido",
+        description: "Você já utilizou suas 6 consultas gratuitas de hoje."
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setIsLoading(true);
-    setMessages(prev => [...prev, { role: 'user', text: "[Enviando imagem para análise...]" }]);
+    setMessages(prev => [...prev, { role: 'user', text: "[Analisando imagem...]" }]);
 
     const reader = new FileReader();
     reader.onloadend = async () => {
@@ -122,6 +162,7 @@ export default function PetChatPage() {
         const analysisRef = collection(firestore, 'users', user.uid, 'analysisRequests');
         addDocumentNonBlocking(analysisRef, {
           userId: user.uid,
+          petId: pet.id,
           requestType: 'image',
           textInput: "Análise de imagem via chat",
           analysisOutput: aiText,
@@ -136,7 +177,7 @@ export default function PetChatPage() {
           title: "Erro na análise",
           description: "Não foi possível analisar a imagem."
         });
-        setMessages(prev => prev.slice(0, -1)); // Remove a mensagem de carregamento
+        setMessages(prev => prev.slice(0, -1));
       } finally {
         setIsLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -207,15 +248,23 @@ export default function PetChatPage() {
             </div>
           </div>
           
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleClearChat}
-            className="text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 h-8 w-8"
-            title="Limpar conversa"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "text-[10px] font-bold px-2 py-1 rounded-full border",
+              isLimitReached ? "border-destructive text-destructive bg-destructive/10" : "border-primary/20 text-primary/60"
+            )}>
+              {messagesCount}/6 HOJE
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleClearChat}
+              className="text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 h-8 w-8"
+              title="Limpar conversa"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
         </header>
 
         <div className="flex-1 relative overflow-hidden mb-6">
@@ -268,6 +317,14 @@ export default function PetChatPage() {
                   </div>
                 </div>
               )}
+
+              {isLimitReached && (
+                <div className="flex justify-center py-4">
+                  <div className="bg-destructive/10 border border-destructive/20 text-destructive text-[10px] font-bold px-4 py-2 rounded-lg flex items-center gap-2 uppercase tracking-wider">
+                    <AlertTriangle className="w-3 h-3" /> Limite diário atingido (6/6)
+                  </div>
+                </div>
+              )}
             </div>
           </ScrollArea>
         </div>
@@ -277,7 +334,8 @@ export default function PetChatPage() {
             <button 
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="absolute left-4 z-10 text-muted-foreground/40 hover:text-primary transition-colors"
+              className="absolute left-4 z-10 text-muted-foreground/40 hover:text-primary transition-colors disabled:opacity-30"
+              disabled={isLoading || isLimitReached}
             >
               <ImageIcon className="w-5 h-5" />
             </button>
@@ -287,19 +345,19 @@ export default function PetChatPage() {
               className="hidden"
               ref={fileInputRef}
               onChange={handleImageUpload}
-              disabled={isLoading}
+              disabled={isLoading || isLimitReached}
             />
             <Input 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Descreva o sintoma ou anexe uma foto..."
+              placeholder={isLimitReached ? "Limite diário atingido" : "Descreva o sintoma ou anexe uma foto..."}
               className="h-14 pl-12 pr-14 bg-white/[0.03] border-white/5 focus-visible:ring-primary/20 rounded-full text-sm placeholder:text-muted-foreground/30"
-              disabled={isLoading}
+              disabled={isLoading || isLimitReached}
             />
             <button 
               type="submit" 
-              disabled={isLoading || !input.trim()}
-              className="absolute right-4 text-muted-foreground/40 hover:text-primary transition-colors disabled:opacity-50"
+              disabled={isLoading || !input.trim() || isLimitReached}
+              className="absolute right-4 text-muted-foreground/40 hover:text-primary transition-colors disabled:opacity-30"
             >
               <Send className="w-5 h-5" />
             </button>
