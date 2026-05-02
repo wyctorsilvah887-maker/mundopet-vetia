@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Stethoscope, LogOut, History, ChevronDown, PawPrint } from "lucide-react";
+import { LogOut, History, PawPrint } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
 import { 
@@ -37,7 +37,11 @@ export function Navigation() {
 
   const isAnonymous = user?.isAnonymous;
   const isLoggedIn = user && !isAnonymous;
-  const displayName = profile?.displayName || user?.displayName || user?.email?.split('@')[0] || "Usuário";
+  
+  // Lógica para evitar duplicidade de "CEO/"
+  const rawName = profile?.displayName || user?.displayName || user?.email?.split('@')[0] || "Usuário";
+  const firstName = rawName.split(' ')[0].replace(/^CEO\//i, '');
+  const displayLabel = `CEO/${firstName}`;
   
   const userPhotoUrl = profile?.photoURL || user?.photoURL || `https://picsum.photos/seed/${user?.uid || 'guest'}/100/100`;
 
@@ -56,15 +60,15 @@ export function Navigation() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 focus:outline-none hover:opacity-80 transition-all bg-white/[0.02] py-1.5 pl-3 pr-1.5 rounded-full border border-white/5">
-                  <span className="text-xs font-bold text-white tracking-wide">CEO/{displayName.split(' ')[0]}</span>
+                  <span className="text-xs font-bold text-white tracking-wide">{displayLabel}</span>
                   <Avatar className="h-8 w-8 border border-white/10 shadow-xl">
                     <AvatarImage 
                       src={userPhotoUrl} 
-                      alt={displayName}
+                      alt={rawName}
                       className="object-cover"
                     />
                     <AvatarFallback className="bg-primary/10 text-primary">
-                      {displayName.charAt(0).toUpperCase()}
+                      {firstName.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </button>

@@ -75,15 +75,16 @@ export default function Home() {
                 <Card key={pet.id} className="bg-white/[0.02] border-white/5 hover:bg-white/[0.04] transition-all relative group overflow-hidden rounded-2xl border-l-4 border-l-primary/30">
                   <CardContent className="p-5 flex items-center gap-5">
                     <div className="relative h-16 w-16 shrink-0">
-                      <div className="h-full w-full rounded-full overflow-hidden border-2 border-primary/20 shadow-xl relative bg-primary/5">
+                      <div className="h-full w-full rounded-full overflow-hidden border-2 border-primary/20 shadow-xl relative bg-primary/10">
                         <Image 
                           src={pet.imageUrl || `https://picsum.photos/seed/${pet.id}/200/200`} 
                           alt={pet.name} 
                           fill 
+                          unoptimized
                           className="object-cover"
                         />
                       </div>
-                      <div className="absolute -bottom-1 -right-1 bg-black rounded-full p-1 border border-white/10">
+                      <div className="absolute -bottom-1 -right-1 bg-black rounded-full p-1 border border-white/10 z-10">
                          {pet.species === 'dog' ? <Dog className="w-3 h-3 text-primary" /> : pet.species === 'cat' ? <Cat className="w-3 h-3 text-primary" /> : <PawPrint className="w-3 h-3 text-primary" />}
                       </div>
                     </div>
