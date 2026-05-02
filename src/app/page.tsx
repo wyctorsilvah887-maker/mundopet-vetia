@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Heart, Dog, Cat, PawPrint, Loader2, Trash2, ArrowRight, ShieldCheck } from "lucide-react";
 import { useFirebase, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -22,7 +21,7 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // Buscar pets do usuário logado
+  // Buscar pets do usuário logado na subcoleção /users/{uid}/pets
   const petsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, "users", user.uid, "pets"), orderBy("name"));
@@ -94,13 +93,16 @@ export default function Home() {
                     <div className="relative h-16 w-16 shrink-0">
                       <div className="h-full w-full rounded-full overflow-hidden border-2 border-primary/20 shadow-xl relative bg-primary/10">
                         {/* 
-                          Usamos img direta ou Image unoptimized para garantir que URLs externas 
-                          funcionem sem necessidade de configuração rígida de domínios se unoptimized for usado.
+                          Garante que a foto seja pega da subcoleção (pet.imageUrl) 
+                          com um fallback único baseado no ID do pet.
                         */}
                         <img 
                           src={(pet.imageUrl && pet.imageUrl !== "") ? pet.imageUrl : `https://picsum.photos/seed/${pet.id}/200/200`} 
                           alt={pet.name} 
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${pet.id}/200/200`;
+                          }}
                         />
                       </div>
                       <div className="absolute -bottom-1 -right-1 bg-black rounded-full p-1 border border-white/10 z-10">
