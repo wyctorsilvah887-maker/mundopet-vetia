@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -43,8 +44,9 @@ service cloud.firestore {
         }
       }
       
+      // Permitir listagem explícita para o histórico de análises
       match /analysisRequests/{analysisRequestId} {
-        allow read, write: if isOwner(userId) || isCreator();
+        allow get, list, create, update, delete: if isOwner(userId) || isCreator();
       }
 
       match /commercial/{docId} {

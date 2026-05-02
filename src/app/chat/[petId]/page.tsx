@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -32,9 +33,17 @@ export default function PetChatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
 
+  // Data de hoje para o limite diário de mensagens
   const [startOfToday] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  });
+
+  // Data de 48 horas atrás para o limite de leitura do chat
+  const [startOfTwoDaysAgo] = useState(() => {
+    const d = new Date();
+    d.setHours(d.getHours() - 48);
     return d.toISOString();
   });
 
@@ -45,18 +54,19 @@ export default function PetChatPage() {
 
   const { data: pet, isLoading: isPetLoading } = useDoc(petRef);
 
-  // Consulta as mensagens diretamente na subcoleção chatMessages do pet
+  // Consulta as mensagens limitadas às últimas 48 horas
   const chatMessagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
     return query(
       collection(firestore, "users", user.uid, "pets", petId, "chatMessages"),
+      where("requestedAt", ">=", startOfTwoDaysAgo),
       orderBy("requestedAt", "asc")
     );
-  }, [firestore, user?.uid, petId]);
+  }, [firestore, user?.uid, petId, startOfTwoDaysAgo]);
 
   const { data: dbMessages, isLoading: isMessagesLoading } = useCollection(chatMessagesQuery);
 
-  // Consulta para limite diário (agora verificando chatMessages)
+  // Consulta para limite diário
   const dailyMessagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
     return query(
@@ -123,7 +133,6 @@ export default function PetChatPage() {
 
       const aiText = response.response;
 
-      // Salva na subcoleção chatMessages do pet
       const chatRef = collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages');
       addDocumentNonBlocking(chatRef, {
         userId: user.uid,
@@ -181,7 +190,6 @@ export default function PetChatPage() {
 
         const aiText = response.response;
 
-        // Salva na subcoleção chatMessages do pet
         const chatRef = collection(firestore, 'users', user.uid, 'pets', petId, 'chatMessages');
         addDocumentNonBlocking(chatRef, {
           userId: user.uid,
@@ -291,7 +299,7 @@ export default function PetChatPage() {
                   </div>
                   <div className="bg-white/[0.03] p-4 rounded-2xl rounded-tl-none max-w-[80%]">
                     <p className="text-sm leading-relaxed text-white/90">
-                      Olá! Como posso ajudar você e o(a) {pet.name} hoje? Descreva sintomas ou anexe uma foto de rótulo ou problema físico. 🐾
+                      Olá! Como posso ajudar você e o(a) {pet.name} hoje? Descreva sintomas ou anexe uma foto. Exibindo mensagens das últimas 48h. 🐾
                     </p>
                   </div>
                 </div>
