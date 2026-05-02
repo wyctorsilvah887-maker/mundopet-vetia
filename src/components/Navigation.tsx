@@ -1,11 +1,9 @@
-
 "use client";
 
 import Link from "next/link";
 import { Stethoscope, LogOut, History, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
-import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -54,7 +52,7 @@ export function Navigation() {
         </Link>
         
         <div className="flex items-center gap-4">
-          {isLoggedIn ? (
+          {isLoggedIn && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 focus:outline-none hover:opacity-80 transition-all bg-white/5 py-1.5 pl-1.5 pr-3 rounded-full border border-white/10">
@@ -88,15 +86,6 @@ export function Navigation() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" className="text-muted-foreground hover:text-primary hidden md:flex" asChild>
-                <Link href="/login">Entrar</Link>
-              </Button>
-              <Button size="sm" className="font-bold rounded-full px-6" asChild>
-                <Link href="/login">Começar agora</Link>
-              </Button>
-            </div>
           )}
         </div>
       </div>

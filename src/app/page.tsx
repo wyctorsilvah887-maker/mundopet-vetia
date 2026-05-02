@@ -1,24 +1,16 @@
-
 "use client";
 
 import Link from "next/link";
 import { Navigation } from "@/components/Navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Heart, Plus, Dog, Cat, PawPrint, Loader2, Trash2, ArrowRight } from "lucide-react";
-import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
+import { Heart, Dog, Cat, PawPrint, Loader2, Trash2, ArrowRight } from "lucide-react";
+import { useFirebase, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
-import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Home() {
   const { firestore, user } = useFirebase();
-  const [isAddPetOpen, setIsAddPetOpen] = useState(false);
-  const [newPet, setNewPet] = useState({ name: "", species: "dog", breed: "", age: "" });
 
   // Buscar pets do usuário
   const petsQuery = useMemoFirebase(() => {
@@ -27,23 +19,6 @@ export default function Home() {
   }, [firestore, user]);
 
   const { data: pets, isLoading: isPetsLoading } = useCollection(petsQuery);
-
-  const handleAddPet = () => {
-    if (!firestore || !user || !newPet.name) return;
-
-    const petsRef = collection(firestore, "users", user.uid, "pets");
-    addDocumentNonBlocking(petsRef, {
-      userId: user.uid,
-      name: newPet.name,
-      species: newPet.species,
-      breed: newPet.breed || "SRD",
-      age: Number(newPet.age) || 0,
-      imageUrl: `https://picsum.photos/seed/${newPet.name}-${Date.now()}/400/400`
-    });
-
-    setIsAddPetOpen(false);
-    setNewPet({ name: "", species: "dog", breed: "", age: "" });
-  };
 
   const handleDeletePet = (petId: string) => {
     if (!firestore || !user) return;
@@ -80,76 +55,6 @@ export default function Home() {
               <Heart className="w-5 h-5 text-primary" fill="currentColor" />
               <h2 className="text-xl font-bold">Meus Pets</h2>
             </div>
-            
-            <Dialog open={isAddPetOpen} onOpenChange={setIsAddPetOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline" className="rounded-full border-primary/20 hover:bg-primary/10">
-                  <Plus className="w-4 h-4 mr-2" /> Novo Pet
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-black/95 border-white/10 text-white shadow-2xl">
-                <DialogHeader>
-                  <DialogTitle>Cadastrar Novo Pet</DialogTitle>
-                  <DialogDescription className="text-muted-foreground">Adicione os dados do seu pet para começar o acompanhamento.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nome do Pet</Label>
-                    <Input 
-                      id="name" 
-                      placeholder="Ex: Totó" 
-                      className="bg-white/5 border-white/10 focus:border-primary" 
-                      value={newPet.name}
-                      onChange={(e) => setNewPet({...newPet, name: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="species">Espécie</Label>
-                      <Select 
-                        value={newPet.species} 
-                        onValueChange={(val) => setNewPet({...newPet, species: val})}
-                      >
-                        <SelectTrigger className="bg-white/5 border-white/10">
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-black border-white/10 text-white">
-                          <SelectItem value="dog">Cão</SelectItem>
-                          <SelectItem value="cat">Gato</SelectItem>
-                          <SelectItem value="other">Outro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="age">Idade (anos)</Label>
-                      <Input 
-                        id="age" 
-                        type="number" 
-                        placeholder="Ex: 5" 
-                        className="bg-white/5 border-white/10"
-                        value={newPet.age}
-                        onChange={(e) => setNewPet({...newPet, age: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="breed">Raça</Label>
-                    <Input 
-                      id="breed" 
-                      placeholder="Ex: Golden Retriever" 
-                      className="bg-white/5 border-white/10"
-                      value={newPet.breed}
-                      onChange={(e) => setNewPet({...newPet, breed: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button className="w-full font-bold h-12 text-lg" onClick={handleAddPet} disabled={!newPet.name}>
-                    Salvar Pet
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
           </div>
 
           {isPetsLoading ? (
@@ -168,9 +73,6 @@ export default function Home() {
                 <p className="text-xs text-muted-foreground uppercase tracking-widest max-w-[250px] leading-loose">
                   CADASTRE SEUS ANIMAIS NO SISTEMA PARA INICIAR O CHAT INTELIGENTE.
                 </p>
-                <Button onClick={() => setIsAddPetOpen(true)} className="mt-8 rounded-full font-bold">
-                  <Plus className="w-4 h-4 mr-2" /> Cadastrar Meu Primeiro Pet
-                </Button>
               </CardContent>
             </Card>
           ) : (
