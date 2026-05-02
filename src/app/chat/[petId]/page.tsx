@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { useFirebase, useDoc, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
+import { useFirebase, useDoc, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { doc, collection } from "firebase/firestore";
-import { Send, ArrowLeft, Loader2, Bot, User, PawPrint, Info, AlertCircle } from "lucide-react";
+import { Send, ArrowLeft, Loader2, Bot, User, PawPrint, ImageIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { petChat } from "@/ai/flows/pet-chat-flow";
@@ -29,7 +28,6 @@ export default function PetChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const petRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
@@ -44,7 +42,6 @@ export default function PetChatPage() {
     }
   }, [user, isUserLoading, router]);
 
-  // Auto scroll para o final
   useEffect(() => {
     const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]');
     if (scrollContainer) {
@@ -76,7 +73,6 @@ export default function PetChatPage() {
       const aiText = response.response;
       setMessages(prev => [...prev, { role: 'model', text: aiText }]);
 
-      // Salvar interação no Firestore
       const analysisRef = collection(firestore, 'users', user.uid, 'analysisRequests');
       addDocumentNonBlocking(analysisRef, {
         userId: user.uid,
@@ -95,6 +91,12 @@ export default function PetChatPage() {
     }
   }
 
+  const handleDeletePet = () => {
+    if (!petRef) return;
+    deleteDocumentNonBlocking(petRef);
+    router.push("/");
+  };
+
   if (isPetLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
@@ -111,7 +113,6 @@ export default function PetChatPage() {
       <div className="min-h-screen bg-background flex flex-col">
         <Navigation />
         <div className="flex-1 flex flex-col items-center justify-center p-4">
-          <AlertCircle className="w-12 h-12 text-destructive mb-4" />
           <h2 className="text-xl font-bold mb-2">Pet não encontrado</h2>
           <Link href="/">
             <Button variant="outline">Voltar ao Início</Button>
@@ -125,17 +126,17 @@ export default function PetChatPage() {
     <div className="min-h-screen bg-background flex flex-col h-screen overflow-hidden">
       <Navigation />
       
-      <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 pt-4 pb-8 overflow-hidden">
-        {/* Header do Chat */}
-        <header className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
+      <main className="flex-1 flex flex-col max-w-6xl mx-auto w-full px-4 pt-6 pb-6 overflow-hidden relative">
+        {/* Header do Pet - Estilo Screenshot */}
+        <header className="flex items-center justify-between mb-8 px-2">
           <div className="flex items-center gap-4">
             <Link href="/">
-              <Button variant="ghost" size="icon" className="hover:bg-white/5">
-                <ArrowLeft className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="hover:bg-white/5 h-8 w-8">
+                <ArrowLeft className="w-4 h-4 text-muted-foreground" />
               </Button>
             </Link>
             <div className="flex items-center gap-3">
-              <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-primary/20 shadow-lg">
+              <div className="relative h-10 w-10 rounded-full overflow-hidden border border-white/10">
                 <Image 
                   src={pet.photoURL || `https://picsum.photos/seed/${pet.id}/200/200`} 
                   alt={pet.name} 
@@ -144,54 +145,63 @@ export default function PetChatPage() {
                   unoptimized
                 />
               </div>
-              <div>
-                <h2 className="font-bold text-lg text-white flex items-center gap-2">
-                  {pet.name} <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-widest border border-primary/20">Chat</span>
+              <div className="flex flex-col">
+                <h2 className="font-bold text-base text-primary leading-none lowercase">
+                  {pet.name}
                 </h2>
-                <p className="text-xs text-muted-foreground uppercase font-medium tracking-wider">
-                  {pet.species === 'dog' ? 'Cão' : 'Gato'} • {pet.breed}
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.1em] mt-1">
+                  {pet.species === 'dog' ? 'CACHORRO' : 'GATO'} • {pet.breed || 'SEM RAÇA'}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.02] border border-white/5">
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Vet IA Conectado</span>
-          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleDeletePet}
+            className="text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 h-8 w-8"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
         </header>
 
-        {/* Área de Mensagens */}
-        <div className="flex-1 relative overflow-hidden bg-white/[0.01] rounded-3xl border border-white/5 mb-4 shadow-2xl">
-          <ScrollArea className="h-full w-full p-6">
-            <div className="space-y-6">
-              {/* Mensagem Inicial da IA */}
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                  <Bot className="w-4 h-4 text-primary" />
+        {/* Área de Mensagens com Marca d'água */}
+        <div className="flex-1 relative overflow-hidden mb-6">
+          {/* Marca d'água Centralizada */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-[0.03]">
+            <PawPrint className="w-64 h-64 mb-4" />
+            <h1 className="text-6xl font-black tracking-[0.3em]">VET IA</h1>
+          </div>
+
+          <ScrollArea className="h-full w-full">
+            <div className="space-y-6 pb-4">
+              {messages.length === 0 && (
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Bot className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="bg-white/[0.03] p-4 rounded-2xl rounded-tl-none max-w-[80%]">
+                    <p className="text-sm leading-relaxed text-white/90">
+                      Olá! Como posso ajudar você e o(a) {pet.name} hoje?
+                    </p>
+                  </div>
                 </div>
-                <div className="bg-white/[0.03] border border-white/5 p-4 rounded-2xl rounded-tl-none max-w-[85%]">
-                  <p className="text-sm leading-relaxed text-white/90">
-                    Olá! Eu sou o Vet IA da WS Studios. Estou pronto para conversar sobre a saúde e o bem-estar do(a) <strong>{pet.name}</strong>. Como posso ajudar vocês hoje?
-                  </p>
-                </div>
-              </div>
+              )}
 
               {messages.map((msg, i) => (
                 <div key={i} className={cn("flex gap-4", msg.role === 'user' ? "flex-row-reverse" : "")}>
                   <div className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center shrink-0 border",
-                    msg.role === 'user' 
-                      ? "bg-secondary border-white/10" 
-                      : "bg-primary/10 border-primary/20"
+                    "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+                    msg.role === 'user' ? "bg-secondary" : "bg-primary/10"
                   )}>
                     {msg.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-primary" />}
                   </div>
                   <div className={cn(
-                    "p-4 rounded-2xl max-w-[85%] text-sm leading-relaxed shadow-sm",
+                    "p-4 rounded-2xl max-w-[80%] text-sm leading-relaxed",
                     msg.role === 'user' 
                       ? "bg-primary text-black font-medium rounded-tr-none" 
-                      : "bg-white/[0.03] border border-white/5 text-white/90 rounded-tl-none"
+                      : "bg-white/[0.03] text-white/90 rounded-tl-none"
                   )}>
                     <p className="whitespace-pre-line">{msg.text}</p>
                   </div>
@@ -200,10 +210,10 @@ export default function PetChatPage() {
               
               {isLoading && (
                 <div className="flex gap-4 animate-pulse">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Bot className="w-4 h-4 text-primary" />
                   </div>
-                  <div className="bg-white/[0.03] border border-white/5 p-4 rounded-2xl rounded-tl-none w-24 flex items-center justify-center">
+                  <div className="bg-white/[0.03] p-4 rounded-2xl rounded-tl-none w-16 flex items-center justify-center">
                     <Loader2 className="w-4 h-4 animate-spin text-primary" />
                   </div>
                 </div>
@@ -212,36 +222,31 @@ export default function PetChatPage() {
           </ScrollArea>
         </div>
 
-        {/* Input de Mensagem */}
-        <form onSubmit={handleSendMessage} className="relative group">
-          <div className="absolute -top-12 left-0 right-0 flex justify-center opacity-0 group-focus-within:opacity-100 transition-opacity">
-            <div className="bg-black/80 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full flex items-center gap-2 shadow-2xl">
-              <Info className="w-3 h-3 text-primary" />
-              <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">IA em Modo Preventivo</span>
+        {/* Input de Mensagem - Estilo Screenshot (Pílula) */}
+        <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto w-full px-2">
+          <div className="relative flex items-center">
+            <div className="absolute left-4 z-10 text-muted-foreground/40">
+              <ImageIcon className="w-5 h-5" />
             </div>
-          </div>
-          
-          <div className="relative">
             <Input 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={`Falar sobre ${pet.name}...`}
-              className="h-16 pl-6 pr-16 bg-[#0a0a0a] border-white/10 focus-visible:ring-primary/30 rounded-2xl text-base shadow-2xl placeholder:text-white/10"
+              placeholder="Descreva o sintoma ou anexe uma foto..."
+              className="h-14 pl-12 pr-14 bg-white/[0.03] border-white/5 focus-visible:ring-primary/20 rounded-full text-sm placeholder:text-muted-foreground/30"
               disabled={isLoading}
             />
-            <Button 
+            <button 
               type="submit" 
-              size="icon" 
-              className="absolute right-3 top-3 h-10 w-10 bg-primary text-black hover:bg-primary/90 rounded-xl transition-all hover:scale-105 active:scale-95"
               disabled={isLoading || !input.trim()}
+              className="absolute right-4 text-muted-foreground/40 hover:text-primary transition-colors disabled:opacity-50"
             >
               <Send className="w-5 h-5" />
-            </Button>
+            </button>
           </div>
         </form>
         
-        <p className="text-[10px] text-center text-muted-foreground/30 font-bold uppercase tracking-[0.2em] mt-4">
-          WS STUDIOS VET IA • INFORMAÇÃO NÃO SUBSTITUI CONSULTA VETERINÁRIA
+        <p className="text-[9px] text-center text-muted-foreground/10 font-bold uppercase tracking-[0.2em] mt-6">
+          INFORMAÇÃO NÃO SUBSTITUI CONSULTA VETERINÁRIA
         </p>
       </main>
     </div>

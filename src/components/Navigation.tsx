@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -20,7 +19,6 @@ export function Navigation() {
   const { user, auth, firestore } = useFirebase();
   const router = useRouter();
 
-  // Buscar dados extras do perfil no Firestore
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, "users", user.uid);
@@ -42,27 +40,26 @@ export function Navigation() {
   const firstName = rawName.split(' ')[0].replace(/^CEO\//i, '');
   const displayLabel = `CEO/${firstName}`;
   
-  // Garantimos que a URL da foto seja carregada corretamente
   const userPhotoUrl = profile?.photoURL || user?.photoURL || `https://picsum.photos/seed/${user?.uid || 'guest'}/100/100`;
 
   return (
     <nav className="bg-background border-b border-white/5 sticky top-0 z-50">
-      <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <PawPrint className="text-primary w-6 h-6" />
+      <div className="container mx-auto px-4 h-20 flex items-center relative">
+        {/* Logo Centralizada conforme screenshot */}
+        <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 group">
+          <PawPrint className="text-primary w-5 h-5" />
           <span className="text-xl font-bold tracking-tight">
             Vet <span className="text-primary">IA</span>
           </span>
         </Link>
         
-        <div className="flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-4">
           {isLoggedIn && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 focus:outline-none hover:opacity-80 transition-all bg-white/[0.02] py-1.5 pl-3 pr-1.5 rounded-full border border-white/5">
-                  <span className="text-xs font-bold text-white tracking-wide">{displayLabel}</span>
+                  <span className="text-[10px] font-bold text-white tracking-widest uppercase">{displayLabel}</span>
                   <Avatar className="h-8 w-8 border border-white/10 shadow-xl">
-                    {/* Forçamos o carregamento da imagem de perfil */}
                     <AvatarImage 
                       src={userPhotoUrl} 
                       alt={rawName}
