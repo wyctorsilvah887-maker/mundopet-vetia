@@ -10,6 +10,7 @@ import { useFirebase, useCollection, useMemoFirebase, deleteDocumentNonBlocking 
 import { collection, query, orderBy, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Image from "next/image";
 
 export default function Home() {
   const { firestore, user, isUserLoading } = useFirebase();
@@ -23,6 +24,7 @@ export default function Home() {
 
   const petsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
+    // Buscamos na subcoleção pets do usuário logado
     return query(collection(firestore, "users", user.uid, "pets"), orderBy("name"));
   }, [firestore, user]);
 
@@ -90,14 +92,14 @@ export default function Home() {
                 <Card key={pet.id} className="bg-white/[0.02] border-white/5 hover:bg-white/[0.04] transition-all relative group overflow-hidden rounded-2xl border-l-4 border-l-primary/30">
                   <CardContent className="p-5 flex items-center gap-5">
                     <div className="relative h-20 w-20 shrink-0">
-                      <div className="h-full w-full rounded-full overflow-hidden border-2 border-white/10 shadow-2xl bg-muted/20">
-                        <img 
+                      <div className="h-full w-full rounded-full overflow-hidden border-2 border-white/10 shadow-2xl bg-muted/20 relative">
+                        {/* Tentamos carregar o campo imageUrl do banco de dados */}
+                        <Image 
                           src={pet.imageUrl || `https://picsum.photos/seed/${pet.id}/200/200`} 
                           alt={pet.name} 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${pet.id}/200/200`;
-                          }}
+                          fill
+                          className="object-cover"
+                          unoptimized
                         />
                       </div>
                       <div className="absolute -bottom-1 -right-1 bg-black rounded-full p-1 border border-white/10 z-10">
