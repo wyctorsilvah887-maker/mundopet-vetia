@@ -1,12 +1,13 @@
+
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirebase, useDoc, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
-import { doc, collection, query, where } from "firebase/firestore";
+import { doc, collection, query, where, orderBy } from "firebase/firestore";
 import { Send, ArrowLeft, Loader2, Bot, User, PawPrint, ImageIcon, Trash2, AlertTriangle } from "lucide-react";
 import NextLink from "next/link";
 import Image from "next/image";
@@ -27,12 +28,19 @@ export default function PetChatPage() {
   const { firestore, user, isUserLoading } = useFirebase();
   const { toast } = useToast();
   
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
 
+  // Limite de 48 horas para o histórico
+  const [fortyEightHoursAgo] = useState(() => {
+    const d = new Date();
+    d.setHours(d.getHours() - 48);
+    return d.toISOString();
+  });
+
+  // Limite de 6 mensagens hoje
   const [startOfToday] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -46,6 +54,20 @@ export default function PetChatPage() {
 
   const { data: pet, isLoading: isPetLoading } = useDoc(petRef);
 
+  // Consulta de mensagens persistidas
+  const chatMessagesQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid || !petId) return null;
+    return query(
+      collection(firestore, "users", user.uid, "analysisRequests"),
+      where("petId", "==", petId),
+      where("requestedAt", ">=", fortyEightHoursAgo),
+      orderBy("requestedAt", "asc")
+    );
+  }, [firestore, user?.uid, petId, fortyEightHoursAgo]);
+
+  const { data: dbMessages, isLoading: isMessagesLoading } = useCollection(chatMessagesQuery);
+
+  // Consulta para limite diário
   const dailyMessagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
@@ -58,6 +80,17 @@ export default function PetChatPage() {
   const messagesCount = todayMessages?.length || 0;
   const isLimitReached = messagesCount >= 6;
 
+  // Transformar documentos do Firestore em formato de mensagem para o chat
+  const messages = useMemo(() => {
+    if (!dbMessages) return [];
+    return dbMessages.flatMap(doc => {
+      const msgs: Message[] = [];
+      if (doc.textInput) msgs.push({ role: 'user', text: doc.textInput });
+      if (doc.analysisOutput) msgs.push({ role: 'model', text: doc.analysisOutput });
+      return msgs;
+    });
+  }, [dbMessages]);
+
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push("/login");
@@ -69,11 +102,11 @@ export default function PetChatPage() {
     if (scrollAnchorRef.current) {
       scrollAnchorRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isLoading]);
+  }, [messages, isAiLoading]);
 
   async function handleSendMessage(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    if (!input.trim() || isLoading || !pet || !user || !firestore) return;
+    if (!input.trim() || isAiLoading || !pet || !user || !firestore) return;
 
     if (isLimitReached) {
       toast({
@@ -86,10 +119,10 @@ export default function PetChatPage() {
 
     const userMessage = input.trim();
     setInput("");
-    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
-    setIsLoading(true);
+    setIsAiLoading(true);
 
     try {
+      // Usamos o histórico atual para o contexto da IA
       const chatHistory = messages.map(m => ({ role: m.role, text: m.text }));
       
       const response = await petChat({
@@ -102,8 +135,8 @@ export default function PetChatPage() {
       });
 
       const aiText = response.response;
-      setMessages(prev => [...prev, { role: 'model', text: aiText }]);
 
+      // Salvar no Firestore (isso atualizará automaticamente o useCollection)
       const analysisRef = collection(firestore, 'users', user.uid, 'analysisRequests');
       addDocumentNonBlocking(analysisRef, {
         userId: user.uid,
@@ -117,9 +150,13 @@ export default function PetChatPage() {
 
     } catch (error) {
       console.error(error);
-      setMessages(prev => [...prev, { role: 'model', text: "Desculpe, tive um problema ao processar sua mensagem. Tente novamente em instantes. 🐾" }]);
+      toast({
+        variant: "destructive",
+        title: "Erro no processamento",
+        description: "Tente novamente em instantes. 🐾"
+      });
     } finally {
-      setIsLoading(false);
+      setIsAiLoading(false);
     }
   }
 
@@ -137,8 +174,7 @@ export default function PetChatPage() {
       return;
     }
 
-    setIsLoading(true);
-    setMessages(prev => [...prev, { role: 'user', text: "[Analisando imagem...]" }]);
+    setIsAiLoading(true);
 
     const reader = new FileReader();
     reader.onloadend = async () => {
@@ -157,18 +193,13 @@ export default function PetChatPage() {
         });
 
         const aiText = response.response;
-        setMessages(prev => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1] = { role: 'user', text: "[Imagem enviada]" };
-          return [...newMessages, { role: 'model', text: aiText }];
-        });
 
         const analysisRef = collection(firestore, 'users', user.uid, 'analysisRequests');
         addDocumentNonBlocking(analysisRef, {
           userId: user.uid,
           petId: pet.id,
           requestType: 'image',
-          textInput: "Análise de imagem via chat",
+          textInput: "[Imagem enviada para análise]",
           analysisOutput: aiText,
           requestedAt: new Date().toISOString(),
           responseLanguage: 'pt-BR'
@@ -181,20 +212,15 @@ export default function PetChatPage() {
           title: "Erro na análise",
           description: "Não foi possível analisar a imagem."
         });
-        setMessages(prev => prev.slice(0, -1));
       } finally {
-        setIsLoading(false);
+        setIsAiLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
     };
     reader.readAsDataURL(file);
   }
 
-  const handleClearChat = () => {
-    setMessages([]);
-  };
-
-  if (isPetLoading) {
+  if (isPetLoading || isMessagesLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navigation />
@@ -259,15 +285,6 @@ export default function PetChatPage() {
             )}>
               {messagesCount}/6 HOJE
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleClearChat}
-              className="text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 h-8 w-8"
-              title="Limpar conversa"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
           </div>
         </header>
 
@@ -311,7 +328,7 @@ export default function PetChatPage() {
                 </div>
               ))}
               
-              {isLoading && (
+              {isAiLoading && (
                 <div className="flex gap-4 animate-pulse">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Bot className="w-4 h-4 text-primary" />
@@ -330,7 +347,6 @@ export default function PetChatPage() {
                 </div>
               )}
 
-              {/* Âncora para rolagem automática */}
               <div ref={scrollAnchorRef} className="h-2" />
             </div>
           </ScrollArea>
@@ -342,7 +358,7 @@ export default function PetChatPage() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="absolute left-4 z-10 text-muted-foreground/40 hover:text-primary transition-colors disabled:opacity-30"
-              disabled={isLoading || isLimitReached}
+              disabled={isAiLoading || isLimitReached}
             >
               <ImageIcon className="w-5 h-5" />
             </button>
@@ -352,18 +368,18 @@ export default function PetChatPage() {
               className="hidden"
               ref={fileInputRef}
               onChange={handleImageUpload}
-              disabled={isLoading || isLimitReached}
+              disabled={isAiLoading || isLimitReached}
             />
             <Input 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={isLimitReached ? "Limite diário atingido" : "Descreva o sintoma ou anexe uma foto..."}
               className="h-14 pl-12 pr-14 bg-white/[0.03] border-white/5 focus-visible:ring-primary/20 rounded-full text-sm placeholder:text-muted-foreground/30"
-              disabled={isLoading || isLimitReached}
+              disabled={isAiLoading || isLimitReached}
             />
             <button 
               type="submit" 
-              disabled={isLoading || !input.trim() || isLimitReached}
+              disabled={isAiLoading || !input.trim() || isLimitReached}
               className="absolute right-4 text-muted-foreground/40 hover:text-primary transition-colors disabled:opacity-30"
             >
               <Send className="w-5 h-5" />
