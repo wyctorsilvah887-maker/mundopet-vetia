@@ -150,7 +150,7 @@ export default function Home() {
 
       <footer className="py-20 border-t border-white/5 bg-black">
         <div className="container mx-auto px-4 flex flex-col items-center text-center gap-8">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 opacity-40">
             <PawPrint className="text-primary w-6 h-6" />
             <span className="text-2xl font-bold tracking-tight">
               Vet <span className="text-primary">IA</span>
