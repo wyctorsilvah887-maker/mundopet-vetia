@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirebase, useDoc, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
 import { doc, collection, query, where, orderBy } from "firebase/firestore";
-import { Send, ArrowLeft, Loader2, Bot, User, PawPrint, ImageIcon, Trash2, AlertTriangle } from "lucide-react";
+import { Send, ArrowLeft, Loader2, Bot, User, PawPrint, ImageIcon, AlertTriangle } from "lucide-react";
 import NextLink from "next/link";
 import Image from "next/image";
 import { petChat } from "@/ai/flows/pet-chat-flow";
@@ -33,14 +32,12 @@ export default function PetChatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
 
-  // Limite de 48 horas para o histórico
   const [fortyEightHoursAgo] = useState(() => {
     const d = new Date();
     d.setHours(d.getHours() - 48);
     return d.toISOString();
   });
 
-  // Limite de 6 mensagens hoje
   const [startOfToday] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -54,7 +51,6 @@ export default function PetChatPage() {
 
   const { data: pet, isLoading: isPetLoading } = useDoc(petRef);
 
-  // Consulta de mensagens persistidas
   const chatMessagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
     return query(
@@ -67,7 +63,6 @@ export default function PetChatPage() {
 
   const { data: dbMessages, isLoading: isMessagesLoading } = useCollection(chatMessagesQuery);
 
-  // Consulta para limite diário
   const dailyMessagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
@@ -80,7 +75,6 @@ export default function PetChatPage() {
   const messagesCount = todayMessages?.length || 0;
   const isLimitReached = messagesCount >= 6;
 
-  // Transformar documentos do Firestore em formato de mensagem para o chat
   const messages = useMemo(() => {
     if (!dbMessages) return [];
     return dbMessages.flatMap(doc => {
@@ -97,7 +91,6 @@ export default function PetChatPage() {
     }
   }, [user, isUserLoading, router]);
 
-  // Sistema de rolagem automática
   useEffect(() => {
     if (scrollAnchorRef.current) {
       scrollAnchorRef.current.scrollIntoView({ behavior: "smooth" });
@@ -122,7 +115,6 @@ export default function PetChatPage() {
     setIsAiLoading(true);
 
     try {
-      // Usamos o histórico atual para o contexto da IA
       const chatHistory = messages.map(m => ({ role: m.role, text: m.text }));
       
       const response = await petChat({
@@ -130,13 +122,12 @@ export default function PetChatPage() {
         petSpecies: pet.species,
         petBreed: pet.breed,
         petAge: pet.age,
-        message: userMessage,
+        userMessage: userMessage,
         history: chatHistory
       });
 
       const aiText = response.response;
 
-      // Salvar no Firestore (isso atualizará automaticamente o useCollection)
       const analysisRef = collection(firestore, 'users', user.uid, 'analysisRequests');
       addDocumentNonBlocking(analysisRef, {
         userId: user.uid,
@@ -187,7 +178,7 @@ export default function PetChatPage() {
           petSpecies: pet.species,
           petBreed: pet.breed,
           petAge: pet.age,
-          message: "Analise esta imagem, por favor.",
+          userMessage: "Analise esta imagem, por favor.",
           photoDataUri: imageDataUri,
           history: chatHistory
         });

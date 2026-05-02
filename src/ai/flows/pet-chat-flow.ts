@@ -13,7 +13,7 @@ const PetChatInputSchema = z.object({
   petSpecies: z.string(),
   petBreed: z.string().optional(),
   petAge: z.number().optional(),
-  message: z.string(),
+  userMessage: z.string(),
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
     text: z.string()
@@ -50,8 +50,8 @@ Histórico:
 {{role}}: {{{text}}}
 {{/each}}
 
-Mensagem atual: {{{message}}}
-{{#if photoDataUri}}Foto anexa: {{media url=photoDataUri}}{{/if}}`,
+Mensagem atual: {{{userMessage}}}
+{{#if photoDataUri}}Foto anexa: {{media url=photoDataUri}}{{if}}`,
 });
 
 export async function petChat(input: PetChatInput): Promise<PetChatOutput> {
