@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * ANIMA VET AI SECURITY RULES
+     *
+     * CORE PHILOSOPHY:
+     * This ruleset enforces a strict private-ownership model. All data is organized hierarchically
+     * under the user's root document, ensuring that users can only access and manage their own 
+     * profiles and AI analysis requests.
+     *
+     * DATA STRUCTURE:
+     * - /users/{userId}: Root user profile.
+     * - /users/{userId}/analysisRequests/{requestId}: Subcollection for AI interactions.
+     *
+     * KEY SECURITY DECISIONS:
+     * 1. Path-Based Ownership: The Firebase Authentication UID is used as the document ID for 
+     *    user profiles, establishing a direct link between the auth state and the database path.
+     * 2. Denormalization for Authorization: Critical fields like 'userId' and 'id' are 
+     *    denormalized into documents. This allows rules to verify ownership and relational 
+     *    integrity without expensive cross-document lookups.
+     * 3. Prototyping Flexibility: While authorization is strictly enforced based on ownership, 
+     *    the internal content of requests (text, images, results) is not schema-validated to 
+     *    allow for rapid iteration of AI features.
+     * 4. Structural Segregation: User data is kept entirely private; there is no public 
+     *    listing of profiles or requests.
+     */
+
+    // --- Helper Functions ---
+
+    /** Checks if the request is from a signed-in user. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** Checks if the authenticated user's UID matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** Checks if the document exists and the authenticated user is the owner. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for User Profiles. Users can only manage their own profile.
+     * @path /users/{userId}
+     * @allow get, list, create, update: if auth.uid matches userId.
+     * @deny Any access to a userId document that does not match the requester's UID.
+     * @principle Self-creation and strict ownership for root user documents.
+     */
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+      
+      // On create, ensure the user is creating their own profile and the internal 'id' matches the UID.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      
+      // On update, ensure ownership and that the 'id' field remains immutable for relational integrity.
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Rules for AI Analysis Requests. Scoped to the parent user.
+       * @path /users/{userId}/analysisRequests/{analysisRequestId}
+       * @allow create, update, delete, get, list: if auth.uid matches the parent userId.
+       * @deny Accessing analysis requests belonging to a different userId path.
+       * @principle Path-based subcollection authorization with denormalized ownership validation.
+       */
+      match /analysisRequests/{analysisRequestId} {
+        allow get, list: if isOwner(userId);
+        
+        // Ensure the 'userId' field in the document matches the path userId for query integrity.
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        
+        // Prevent users from "transferring" a request to another user by making 'userId' immutable.
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    // Global Deny: Explicitly deny any access to paths not defined above.
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
