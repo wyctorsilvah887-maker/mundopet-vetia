@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -92,12 +93,14 @@ export default function Home() {
                   <CardContent className="p-5 flex items-center gap-5">
                     <div className="relative h-16 w-16 shrink-0">
                       <div className="h-full w-full rounded-full overflow-hidden border-2 border-primary/20 shadow-xl relative bg-primary/10">
-                        <Image 
+                        {/* 
+                          Usamos img direta ou Image unoptimized para garantir que URLs externas 
+                          funcionem sem necessidade de configuração rígida de domínios se unoptimized for usado.
+                        */}
+                        <img 
                           src={(pet.imageUrl && pet.imageUrl !== "") ? pet.imageUrl : `https://picsum.photos/seed/${pet.id}/200/200`} 
                           alt={pet.name} 
-                          fill 
-                          unoptimized
-                          className="object-cover"
+                          className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="absolute -bottom-1 -right-1 bg-black rounded-full p-1 border border-white/10 z-10">

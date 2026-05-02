@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -41,6 +42,7 @@ export function Navigation() {
   const firstName = rawName.split(' ')[0].replace(/^CEO\//i, '');
   const displayLabel = `CEO/${firstName}`;
   
+  // Garantimos que a URL da foto seja carregada corretamente
   const userPhotoUrl = profile?.photoURL || user?.photoURL || `https://picsum.photos/seed/${user?.uid || 'guest'}/100/100`;
 
   return (
@@ -60,6 +62,7 @@ export function Navigation() {
                 <button className="flex items-center gap-3 focus:outline-none hover:opacity-80 transition-all bg-white/[0.02] py-1.5 pl-3 pr-1.5 rounded-full border border-white/5">
                   <span className="text-xs font-bold text-white tracking-wide">{displayLabel}</span>
                   <Avatar className="h-8 w-8 border border-white/10 shadow-xl">
+                    {/* Forçamos o carregamento da imagem de perfil */}
                     <AvatarImage 
                       src={userPhotoUrl} 
                       alt={rawName}
