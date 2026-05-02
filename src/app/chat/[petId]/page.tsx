@@ -30,17 +30,16 @@ export default function PetChatPage() {
   
   const [input, setInput] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
 
-  // Data de hoje para o limite diário de mensagens
   const [startOfToday] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d.toISOString();
   });
 
-  // Data de 48 horas atrás para o limite de leitura do chat
   const [startOfTwoDaysAgo] = useState(() => {
     const d = new Date();
     d.setHours(d.getHours() - 48);
@@ -54,7 +53,6 @@ export default function PetChatPage() {
 
   const { data: pet, isLoading: isPetLoading } = useDoc(petRef);
 
-  // Consulta as mensagens limitadas às últimas 48 horas
   const chatMessagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
     return query(
@@ -66,7 +64,6 @@ export default function PetChatPage() {
 
   const { data: dbMessages, isLoading: isMessagesLoading } = useCollection(chatMessagesQuery);
 
-  // Consulta para limite diário
   const dailyMessagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
     return query(
@@ -95,12 +92,11 @@ export default function PetChatPage() {
     }
   }, [user, isUserLoading, router]);
 
-  // Rolagem automática
   useEffect(() => {
     if (scrollAnchorRef.current) {
       scrollAnchorRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isAiLoading]);
+  }, [messages, isAiLoading, pendingMessage]);
 
   async function handleSendMessage(e?: React.FormEvent) {
     if (e) e.preventDefault();
@@ -116,6 +112,7 @@ export default function PetChatPage() {
     }
 
     const userMessage = input.trim();
+    setPendingMessage(userMessage);
     setInput("");
     setIsAiLoading(true);
 
@@ -153,6 +150,7 @@ export default function PetChatPage() {
       });
     } finally {
       setIsAiLoading(false);
+      setPendingMessage(null);
     }
   }
 
@@ -170,6 +168,7 @@ export default function PetChatPage() {
       return;
     }
 
+    setPendingMessage("[Enviando imagem para análise...]");
     setIsAiLoading(true);
 
     const reader = new FileReader();
@@ -210,6 +209,7 @@ export default function PetChatPage() {
         });
       } finally {
         setIsAiLoading(false);
+        setPendingMessage(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
     };
@@ -292,7 +292,7 @@ export default function PetChatPage() {
 
           <ScrollArea className="h-full w-full pr-4">
             <div className="space-y-6 pb-4">
-              {messages.length === 0 && (
+              {messages.length === 0 && !pendingMessage && (
                 <div className="flex gap-4">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Bot className="w-4 h-4 text-primary" />
@@ -323,6 +323,17 @@ export default function PetChatPage() {
                   </div>
                 </div>
               ))}
+
+              {pendingMessage && (
+                <div className="flex gap-4 flex-row-reverse animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="p-4 rounded-2xl max-w-[80%] text-sm leading-relaxed bg-primary text-black font-medium rounded-tr-none opacity-70">
+                    <p className="whitespace-pre-line">{pendingMessage}</p>
+                  </div>
+                </div>
+              )}
               
               {isAiLoading && (
                 <div className="flex gap-4 animate-pulse">
