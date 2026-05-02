@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -31,6 +32,45 @@
         "displayName",
         "createdAt"
       ]
+    },
+    "Pet": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Pet",
+      "type": "object",
+      "description": "Represents a pet registered by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Pet entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the owner UserProfile."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the pet."
+        },
+        "species": {
+          "type": "string",
+          "description": "The species of the pet (e.g., dog, cat).",
+          "enum": ["dog", "cat", "other"]
+        },
+        "breed": {
+          "type": "string",
+          "description": "The breed of the pet."
+        },
+        "age": {
+          "type": "number",
+          "description": "The age of the pet in years."
+        },
+        "imageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "A placeholder image URL for the pet."
+        }
+      },
+      "required": ["id", "userId", "name", "species"]
     },
     "AnalysisRequest": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -98,13 +138,17 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Collection storing individual user profiles. The document ID for each UserProfile is the Firebase Authentication UID of the user. Includes denormalized 'id' field for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user, matching Firebase Authentication UID."
-            }
-          ]
+          "description": "Collection storing individual user profiles."
+        }
+      },
+      {
+        "path": "/users/{userId}/pets/{petId}",
+        "definition": {
+          "entityName": "Pet",
+          "schema": {
+            "$ref": "#/backend/entities/Pet"
+          },
+          "description": "Subcollection storing pets belonging to a user."
         }
       },
       {
@@ -114,20 +158,9 @@
           "schema": {
             "$ref": "#/backend/entities/AnalysisRequest"
           },
-          "description": "Subcollection of AI analysis requests specific to a user. Each document includes a denormalized 'userId' field to enable authorization independence and robust security rules without requiring parent document lookups.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who made the analysis request, matching the parent UserProfile ID."
-            },
-            {
-              "name": "analysisRequestId",
-              "description": "The unique identifier for a specific AI analysis request."
-            }
-          ]
+          "description": "Subcollection of AI analysis requests specific to a user."
         }
       }
-    ],
-    "reasoning": "The recommended Firestore structure is designed with a strong emphasis on Authorization Independence, enabling simple and robust security rules, and supporting Query Against Policy (QAPs). The core strategy involves using a path-based ownership model combined with denormalization of authorization-critical fields.\n\n1.  **User Profile (`/users/{userId}`):** Each user's profile is stored in a top-level collection `users`. The document ID for a user profile will be the Firebase Authentication UID (`request.auth.uid`). This inherently links the profile to the authenticated user, making access rules straightforward: `request.auth.uid == userId` for reading and writing one's own profile. This follows the 'Private Data: Path-Based ownership' principle.\n\n2.  **Analysis Requests (`/users/{userId}/analysisRequests/{analysisRequestId}`):** All AI analysis requests made by a user are stored in a subcollection `analysisRequests` under their respective user profile. This establishes a clear 1:N relationship where a user has many analysis requests.\n\n    *   **Authorization Independence:** Each `AnalysisRequest` document contains a `userId` field, which explicitly links it to the owner. This `userId` field in the document will always match the `{userId}` wildcard in the path. This is a critical denormalization strategy. Firestore security rules can directly check `request.auth.uid == resource.data.userId` (or `request.auth.uid == userId` from the path parameter) without needing to perform a `get()` operation on the parent `UserProfile` document. This eliminates hierarchical authorization dependencies, allowing for atomic operations and simplifying rule logic and debugging.\n\n    *   **QAPs (Rules are not Filters):**\n        *   For `UserProfile`: The rule `allow read, update: if request.auth.uid == userId;` ensures that a user can only interact with their own profile. Listing other users' profiles (a `list` operation on `/users`) would be implicitly denied or require explicit, higher-level administrative rules, thus preventing rules from acting as data filters.\n        *   For `AnalysisRequest`: By nesting `analysisRequests` under `/users/{userId}`, any `list` operation on `/users/{userId}/analysisRequests` is automatically scoped to the `userId` in the path. The security rule `allow read, create, list: if request.auth.uid == userId;` permits users to query *only their own* analysis requests. The denormalized `userId` field within each request document provides an additional, redundant check, ensuring that only legitimately owned data is returned, adhering to the QAP principle. This structure makes it impossible for an unauthorized user to query for requests belonging to another user, even if they tried to bypass the path structure, because the document itself also contains the owner's ID.\n\nThis design prioritizes secure, scalable, and debuggable rules by making ownership explicit, denormalizing authorization context, and leveraging hierarchical paths for user-owned data."
+    ]
   }
 }
