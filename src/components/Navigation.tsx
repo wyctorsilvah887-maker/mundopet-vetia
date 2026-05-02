@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Stethoscope, LogOut, User as UserIcon, LogIn, History, ChevronDown } from "lucide-react";
+import { Stethoscope, LogOut, History, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
 import { Button } from "@/components/ui/button";
@@ -68,9 +68,6 @@ export function Navigation() {
                       {displayName.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="hidden md:flex flex-col items-start leading-none">
-                    <span className="text-sm font-bold text-white">Olá, {displayName}</span>
-                  </div>
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
