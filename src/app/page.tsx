@@ -1,12 +1,13 @@
+
 "use client";
 
 import Link from "next/link";
 import { Navigation } from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Dog, Cat, PawPrint, Loader2, Trash2, ArrowRight, ShieldCheck, MessageCircle } from "lucide-react";
-import { useFirebase, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
-import { collection, query, orderBy, doc } from "firebase/firestore";
+import { Heart, Dog, Cat, PawPrint, Loader2, ArrowRight, ShieldCheck, MessageCircle, Camera } from "lucide-react";
+import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query, orderBy } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Image from "next/image";
@@ -27,14 +28,6 @@ export default function Home() {
   }, [firestore, user]);
 
   const { data: pets, isLoading: isPetsLoading } = useCollection(petsQuery);
-
-  const handleDeletePet = (e: React.MouseEvent, petId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!firestore || !user) return;
-    const petRef = doc(firestore, "users", user.uid, "pets", petId);
-    deleteDocumentNonBlocking(petRef);
-  };
 
   if (isUserLoading) {
     return (
@@ -115,16 +108,6 @@ export default function Home() {
                           <MessageCircle className="w-3 h-3" /> Abrir Chat
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                         <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
-                          onClick={(e) => handleDeletePet(e, pet.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
                     </CardContent>
                   </Card>
                 </Link>
@@ -132,22 +115,13 @@ export default function Home() {
             </div>
           )}
           
-          <div className="grid md:grid-cols-2 gap-6 mt-12">
-            <Link href="/analise-texto" className="group p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-all hover:scale-[1.01] flex flex-col justify-between h-[180px]">
+          <div className="mt-12">
+            <Link href="/analise-imagem" className="group p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-all hover:scale-[1.01] flex flex-col justify-between h-[180px] max-w-xl mx-auto">
               <div>
-                <h4 className="font-bold text-xl mb-2 text-primary">Análise de Texto</h4>
-                <p className="text-sm text-muted-foreground max-w-[240px]">Descreva sintomas ou ingredientes para diagnóstico imediato.</p>
-              </div>
-              <div className="flex justify-end">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-colors">
-                  <ArrowRight className="w-5 h-5" />
-                </div>
-              </div>
-            </Link>
-            <Link href="/analise-imagem" className="group p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-all hover:scale-[1.01] flex flex-col justify-between h-[180px]">
-              <div>
-                <h4 className="font-bold text-xl mb-2 text-primary">Análise de Imagem</h4>
-                <p className="text-sm text-muted-foreground max-w-[240px]">Analise fotos de sintomas ou rótulos de rações com visão computacional.</p>
+                <h4 className="font-bold text-xl mb-2 text-primary flex items-center gap-2">
+                  <Camera className="w-5 h-5" /> Análise de Imagem
+                </h4>
+                <p className="text-sm text-muted-foreground max-w-[320px]">Analise fotos de sintomas ou rótulos de rações com visão computacional para diagnósticos rápidos.</p>
               </div>
               <div className="flex justify-end">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-colors">
