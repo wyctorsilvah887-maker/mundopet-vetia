@@ -98,6 +98,17 @@ export default function PetChatPage() {
     }
   }, [messages, isAiLoading, pendingMessage]);
 
+  const formatMessageText = (text: string) => {
+    // Regex para encontrar conteúdo entre asteriscos duplos **exemplo**
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={i} className="font-bold">{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
+
   async function handleSendMessage(e?: React.FormEvent) {
     if (e) e.preventDefault();
     if (!input.trim() || isAiLoading || !pet || !user || !firestore) return;
@@ -319,7 +330,7 @@ export default function PetChatPage() {
                       ? "bg-primary text-black font-medium rounded-tr-none" 
                       : "bg-white/[0.03] text-white/90 rounded-tl-none shadow-sm"
                   )}>
-                    <p className="whitespace-pre-line">{msg.text}</p>
+                    <p className="whitespace-pre-line">{formatMessageText(msg.text)}</p>
                   </div>
                 </div>
               ))}
