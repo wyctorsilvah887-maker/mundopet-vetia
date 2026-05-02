@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,25 +8,44 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { analyzeFoodSymptomsText, type AnalyzeFoodSymptomsTextOutput } from "@/ai/flows/analyze-food-symptoms-text-flow";
 import { Loader2, ArrowLeft, Send, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { useFirebase, addDocumentNonBlocking, initiateAnonymousSignIn } from "@/firebase";
+import { collection } from "firebase/firestore";
 
 export default function TextAnalysisPage() {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalyzeFoodSymptomsTextOutput | null>(null);
+  const { firestore, auth, user } = useFirebase();
+
+  useEffect(() => {
+    if (!user && auth) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, auth]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!description.trim()) return;
+    if (!description.trim() || !user || !firestore) return;
 
     setLoading(true);
     setResult(null);
     try {
       const output = await analyzeFoodSymptomsText({ description });
       setResult(output);
+
+      // Salvar no Firestore
+      const analysisRef = collection(firestore, 'users', user.uid, 'analysisRequests');
+      addDocumentNonBlocking(analysisRef, {
+        userId: user.uid,
+        requestType: 'text',
+        textInput: description,
+        analysisOutput: JSON.stringify(output),
+        requestedAt: new Date().toISOString(),
+        responseLanguage: 'pt-BR'
+      });
+
     } catch (error) {
       console.error(error);
-      // In a real app, we might use toast here
     } finally {
       setLoading(false);
     }
@@ -67,7 +85,7 @@ export default function TextAnalysisPage() {
                 <Button 
                   type="submit" 
                   className="w-full md:w-auto h-12 px-8 text-lg font-bold"
-                  disabled={loading || !description.trim()}
+                  disabled={loading || !description.trim() || !user}
                 >
                   {loading ? (
                     <>
@@ -79,6 +97,7 @@ export default function TextAnalysisPage() {
                     </>
                   )}
                 </Button>
+                {!user && <p className="text-xs text-muted-foreground">Autenticando...</p>}
               </form>
             </CardContent>
           </Card>
@@ -154,7 +173,6 @@ export default function TextAnalysisPage() {
   );
 }
 
-// Internal icons needed for consistency
 function HeartPulse(props: any) {
   return (
     <svg

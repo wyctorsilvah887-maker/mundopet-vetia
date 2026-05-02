@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,8 @@ import { analyzeImageFoodSymptoms, type AnalyzeImageFoodSymptomsOutput } from "@
 import { Loader2, ArrowLeft, Camera, Upload, Trash2, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useFirebase, addDocumentNonBlocking, initiateAnonymousSignIn } from "@/firebase";
+import { collection } from "firebase/firestore";
 
 export default function ImageAnalysisPage() {
   const [image, setImage] = useState<string | null>(null);
@@ -17,6 +18,13 @@ export default function ImageAnalysisPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalyzeImageFoodSymptomsOutput | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { firestore, auth, user } = useFirebase();
+
+  useEffect(() => {
+    if (!user && auth) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, auth]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -36,7 +44,7 @@ export default function ImageAnalysisPage() {
   };
 
   async function handleSubmit() {
-    if (!image) return;
+    if (!image || !user || !firestore) return;
 
     setLoading(true);
     setResult(null);
@@ -46,6 +54,19 @@ export default function ImageAnalysisPage() {
         description: description || undefined
       });
       setResult(output);
+
+      // Salvar no Firestore
+      const analysisRef = collection(firestore, 'users', user.uid, 'analysisRequests');
+      addDocumentNonBlocking(analysisRef, {
+        userId: user.uid,
+        requestType: 'image',
+        textInput: description || null,
+        imageUrl: null, // No MVP salvamos apenas o resultado, a imagem base64 é pesada para o Firestore
+        analysisOutput: output.analysis,
+        requestedAt: new Date().toISOString(),
+        responseLanguage: 'pt-BR'
+      });
+
     } catch (error) {
       console.error(error);
     } finally {
@@ -120,7 +141,7 @@ export default function ImageAnalysisPage() {
 
                 <Button 
                   className="w-full h-12 text-lg font-bold" 
-                  disabled={!image || loading}
+                  disabled={!image || loading || !user}
                   onClick={handleSubmit}
                 >
                   {loading ? (
@@ -133,6 +154,7 @@ export default function ImageAnalysisPage() {
                     </>
                   )}
                 </Button>
+                {!user && <p className="text-xs text-center text-muted-foreground">Autenticando...</p>}
               </CardContent>
             </Card>
 

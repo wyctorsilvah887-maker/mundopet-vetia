@@ -1,10 +1,12 @@
-
 "use client";
 
 import Link from "next/link";
-import { Stethoscope, PawPrint } from "lucide-react";
+import { Stethoscope, History, MessageSquare, Camera } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export function Navigation() {
+  const pathname = usePathname();
+
   return (
     <nav className="border-b bg-card shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -17,15 +19,26 @@ export function Navigation() {
           </span>
         </Link>
         <div className="hidden md:flex items-center gap-6">
-          <Link href="/analise-texto" className="text-sm font-medium hover:text-primary transition-colors">
-            Análise de Texto
+          <Link 
+            href="/analise-texto" 
+            className={`text-sm font-medium flex items-center gap-1.5 transition-colors ${pathname === '/analise-texto' ? 'text-primary font-bold' : 'hover:text-primary'}`}
+          >
+            <MessageSquare className="w-4 h-4" /> Análise de Texto
           </Link>
-          <Link href="/analise-imagem" className="text-sm font-medium hover:text-primary transition-colors">
-            Análise de Imagem
+          <Link 
+            href="/analise-imagem" 
+            className={`text-sm font-medium flex items-center gap-1.5 transition-colors ${pathname === '/analise-imagem' ? 'text-primary font-bold' : 'hover:text-primary'}`}
+          >
+            <Camera className="w-4 h-4" /> Análise de Imagem
+          </Link>
+          <Link 
+            href="/historico" 
+            className={`text-sm font-medium flex items-center gap-1.5 transition-colors ${pathname === '/historico' ? 'text-primary font-bold' : 'hover:text-primary'}`}
+          >
+            <History className="w-4 h-4" /> Histórico
           </Link>
         </div>
         <div className="flex items-center gap-2 bg-secondary/50 px-3 py-1 rounded-full border border-primary/10">
-          <PawPrint className="w-4 h-4 text-primary" />
           <span className="text-xs font-semibold uppercase tracking-wider text-primary">Pets em Foco</span>
         </div>
       </div>
