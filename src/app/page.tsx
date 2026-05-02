@@ -1,11 +1,9 @@
-
 "use client";
 
 import Link from "next/link";
 import { Navigation } from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Heart, Dog, Cat, PawPrint, Loader2, ArrowRight, ShieldCheck, MessageCircle, Camera } from "lucide-react";
+import { Heart, Dog, Cat, PawPrint, Loader2, ShieldCheck, MessageCircle } from "lucide-react";
 import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 import { useRouter } from "next/navigation";
@@ -114,22 +112,6 @@ export default function Home() {
               ))}
             </div>
           )}
-          
-          <div className="mt-12">
-            <Link href="/analise-imagem" className="group p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-all hover:scale-[1.01] flex flex-col justify-between h-[180px] max-w-xl mx-auto">
-              <div>
-                <h4 className="font-bold text-xl mb-2 text-primary flex items-center gap-2">
-                  <Camera className="w-5 h-5" /> Análise de Imagem
-                </h4>
-                <p className="text-sm text-muted-foreground max-w-[320px]">Analise fotos de sintomas ou rótulos de rações com visão computacional para diagnósticos rápidos.</p>
-              </div>
-              <div className="flex justify-end">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-black transition-colors">
-                  <ArrowRight className="w-5 h-5" />
-                </div>
-              </div>
-            </Link>
-          </div>
         </section>
 
         {/* Mission Card Section */}

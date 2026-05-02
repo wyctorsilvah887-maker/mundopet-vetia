@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input";
 import { useFirebase, useDoc, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
 import { doc, collection } from "firebase/firestore";
 import { Send, ArrowLeft, Loader2, Bot, User, PawPrint, ImageIcon, Trash2 } from "lucide-react";
-import Link from "next/navigation";
 import NextLink from "next/link";
 import Image from "next/image";
 import { petChat } from "@/ai/flows/pet-chat-flow";
+import { analyzeImageFoodSymptoms } from "@/ai/flows/analyze-image-food-symptoms";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   role: 'user' | 'model';
@@ -25,10 +26,12 @@ export default function PetChatPage() {
   const router = useRouter();
   const petId = params.petId as string;
   const { firestore, user, isUserLoading } = useFirebase();
+  const { toast } = useToast();
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const petRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !petId) return null;
@@ -92,6 +95,56 @@ export default function PetChatPage() {
     }
   }
 
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !pet || !user || !firestore) return;
+
+    setIsLoading(true);
+    setMessages(prev => [...prev, { role: 'user', text: "[Enviando imagem para análise...]" }]);
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const imageDataUri = reader.result as string;
+      try {
+        const output = await analyzeImageFoodSymptoms({ 
+          imageDataUri,
+          description: `Análise para o pet ${pet.name} (${pet.species})`
+        });
+
+        const aiText = output.analysis;
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = { role: 'user', text: "[Imagem enviada]" };
+          return [...newMessages, { role: 'model', text: aiText }];
+        });
+
+        // Salvar no Firestore
+        const analysisRef = collection(firestore, 'users', user.uid, 'analysisRequests');
+        addDocumentNonBlocking(analysisRef, {
+          userId: user.uid,
+          requestType: 'image',
+          textInput: "Análise de imagem via chat",
+          analysisOutput: aiText,
+          requestedAt: new Date().toISOString(),
+          responseLanguage: 'pt-BR'
+        });
+
+      } catch (error) {
+        console.error(error);
+        toast({
+          variant: "destructive",
+          title: "Erro na análise",
+          description: "Não foi possível analisar a imagem."
+        });
+        setMessages(prev => prev.slice(0, -1)); // Remove a mensagem de carregamento
+      } finally {
+        setIsLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
   const handleClearChat = () => {
     setMessages([]);
   };
@@ -126,7 +179,6 @@ export default function PetChatPage() {
       <Navigation />
       
       <main className="flex-1 flex flex-col max-w-6xl mx-auto w-full px-4 pt-6 pb-6 overflow-hidden relative">
-        {/* Header do Pet - Estilo Screenshot */}
         <header className="flex items-center justify-between mb-8 px-2">
           <div className="flex items-center gap-4">
             <NextLink href="/">
@@ -166,9 +218,7 @@ export default function PetChatPage() {
           </Button>
         </header>
 
-        {/* Área de Mensagens com Marca d'água */}
         <div className="flex-1 relative overflow-hidden mb-6">
-          {/* Marca d'água Centralizada */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-[0.03]">
             <PawPrint className="w-64 h-64 mb-4" />
             <h1 className="text-6xl font-black tracking-[0.3em]">VET IA</h1>
@@ -183,7 +233,7 @@ export default function PetChatPage() {
                   </div>
                   <div className="bg-white/[0.03] p-4 rounded-2xl rounded-tl-none max-w-[80%]">
                     <p className="text-sm leading-relaxed text-white/90">
-                      Olá! Como posso ajudar você e o(a) {pet.name} hoje?
+                      Olá! Como posso ajudar você e o(a) {pet.name} hoje? Descreva sintomas ou anexe uma foto de rótulo ou problema físico.
                     </p>
                   </div>
                 </div>
@@ -222,12 +272,23 @@ export default function PetChatPage() {
           </ScrollArea>
         </div>
 
-        {/* Input de Mensagem - Estilo Screenshot (Pílula) */}
         <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto w-full px-2">
           <div className="relative flex items-center">
-            <div className="absolute left-4 z-10 text-muted-foreground/40">
+            <button 
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute left-4 z-10 text-muted-foreground/40 hover:text-primary transition-colors"
+            >
               <ImageIcon className="w-5 h-5" />
-            </div>
+            </button>
+            <input 
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              disabled={isLoading}
+            />
             <Input 
               value={input}
               onChange={(e) => setInput(e.target.value)}
