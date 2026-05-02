@@ -21,7 +21,6 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // Buscar pets do usuário logado na subcoleção /users/{uid}/pets
   const petsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, "users", user.uid, "pets"), orderBy("name"));
@@ -67,11 +66,11 @@ export default function Home() {
 
         {/* My Pets Section */}
         <section className="container mx-auto px-4 pb-12 max-w-5xl">
-          <div className="flex items-center justify-between gap-2 mb-8">
-            <div className="flex items-center gap-2">
-              <Heart className="w-5 h-5 text-primary" fill="currentColor" />
-              <h2 className="text-xl font-bold">Meus Pets</h2>
-            </div>
+          <div className="flex items-center gap-2 mb-8">
+            <div className="h-2 w-2 rounded-full bg-primary" />
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <Heart className="w-5 h-5 text-primary" fill="currentColor" /> Meus Pets
+            </h2>
           </div>
 
           {isPetsLoading ? (
@@ -90,14 +89,10 @@ export default function Home() {
               {pets.map((pet) => (
                 <Card key={pet.id} className="bg-white/[0.02] border-white/5 hover:bg-white/[0.04] transition-all relative group overflow-hidden rounded-2xl border-l-4 border-l-primary/30">
                   <CardContent className="p-5 flex items-center gap-5">
-                    <div className="relative h-16 w-16 shrink-0">
-                      <div className="h-full w-full rounded-full overflow-hidden border-2 border-primary/20 shadow-xl relative bg-primary/10">
-                        {/* 
-                          Garante que a foto seja pega da subcoleção (pet.imageUrl) 
-                          com um fallback único baseado no ID do pet.
-                        */}
+                    <div className="relative h-20 w-20 shrink-0">
+                      <div className="h-full w-full rounded-full overflow-hidden border-2 border-white/10 shadow-2xl bg-muted/20">
                         <img 
-                          src={(pet.imageUrl && pet.imageUrl !== "") ? pet.imageUrl : `https://picsum.photos/seed/${pet.id}/200/200`} 
+                          src={pet.imageUrl || `https://picsum.photos/seed/${pet.id}/200/200`} 
                           alt={pet.name} 
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -110,9 +105,9 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-lg truncate text-white mb-0.5">{pet.name}</h4>
-                      <p className="text-xs text-muted-foreground truncate font-medium">
-                        {pet.breed} • {pet.age} {pet.age === 1 ? 'ano' : 'anos'}
+                      <h4 className="font-bold text-xl truncate text-white mb-0.5">{pet.name}</h4>
+                      <p className="text-xs text-muted-foreground truncate font-medium uppercase tracking-wider">
+                        {pet.breed} {pet.age ? `• ${pet.age} ${pet.age === 1 ? 'ano' : 'anos'}` : ''}
                       </p>
                     </div>
                     <div className="flex gap-2">
