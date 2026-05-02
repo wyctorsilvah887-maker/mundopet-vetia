@@ -13,7 +13,7 @@ import Image from "next/image";
 export default function Home() {
   const { firestore, user } = useFirebase();
 
-  // Buscar pets do usuário
+  // Buscar pets do usuário logado
   const petsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, "users", user.uid, "pets"), orderBy("name"));
@@ -77,7 +77,7 @@ export default function Home() {
                     <div className="relative h-16 w-16 shrink-0">
                       <div className="h-full w-full rounded-full overflow-hidden border-2 border-primary/20 shadow-xl relative bg-primary/10">
                         <Image 
-                          src={pet.imageUrl || `https://picsum.photos/seed/${pet.id}/200/200`} 
+                          src={(pet.imageUrl && pet.imageUrl !== "") ? pet.imageUrl : `https://picsum.photos/seed/${pet.id}/200/200`} 
                           alt={pet.name} 
                           fill 
                           unoptimized
